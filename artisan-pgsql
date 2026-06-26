@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PHP_INI_SCAN_DIR="/etc/php/8.3/cli/conf.d:${DIR}/.php" \
+php "${DIR}/artisan" "$@"
