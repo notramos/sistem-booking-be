@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\StoreRoomFacilityRequest;
+use App\Http\Requests\Api\UpdateRoomFacilityRequest;
+use App\Http\Resources\RoomFacilityResource;
 use App\Http\Response\ApiResponse;
 use App\Models\RoomFacility;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class RoomFacilityController extends Controller
 {
@@ -14,34 +16,22 @@ class RoomFacilityController extends Controller
 
     public function index(): JsonResponse
     {
-        return $this->success(RoomFacility::where('is_active', true)->get());
+        return $this->success(RoomFacilityResource::collection(RoomFacility::where('is_active', true)->get()));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreRoomFacilityRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:room_facilities,name',
-            'icon' => 'nullable|string|max:100',
-        ]);
+        $facility = RoomFacility::create($request->validated());
 
-        $facility = RoomFacility::create($validated);
-
-        return $this->created($facility, 'Fasilitas berhasil dibuat');
+        return $this->created(new RoomFacilityResource($facility), 'Fasilitas berhasil dibuat');
     }
 
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateRoomFacilityRequest $request, string $id): JsonResponse
     {
         $facility = RoomFacility::findOrFail($id);
+        $facility->update($request->validated());
 
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255|unique:room_facilities,name,' . $id,
-            'icon' => 'nullable|string|max:100',
-            'is_active' => 'boolean',
-        ]);
-
-        $facility->update($validated);
-
-        return $this->success($facility, 'Fasilitas berhasil diperbarui');
+        return $this->success(new RoomFacilityResource($facility), 'Fasilitas berhasil diperbarui');
     }
 
     public function destroy(string $id): JsonResponse

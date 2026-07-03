@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\NotificationResource;
 use App\Http\Response\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ class NotificationController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($request->per_page ?? 20);
 
-        return $this->paginated($notifications);
+        return $this->paginated(NotificationResource::collection($notifications));
     }
 
     public function unreadCount(): JsonResponse

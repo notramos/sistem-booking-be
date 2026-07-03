@@ -8,11 +8,12 @@ use Tests\TestCase;
 class ExampleTest extends TestCase
 {
     /**
-     * A basic test example.
+     * Backend ini API-only (routes/web.php kosong), jadi smoke test memakai
+     * health-check bawaan Laravel alih-alih root path "/".
      */
     public function test_the_application_returns_a_successful_response(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/up');
 
         $response->assertStatus(200);
     }

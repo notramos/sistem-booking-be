@@ -1,7 +1,3 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-Route::get('/', function () {
-    return view('welcome');
-});
+// Backend ini API-only (lihat routes/api.php) — tidak ada rute web/blade.

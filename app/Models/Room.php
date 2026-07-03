@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -51,9 +52,9 @@ class Room extends Model
         return $this->hasMany(RoomImage::class)->orderBy('sort_order');
     }
 
-    public function primaryImage(): HasMany
+    public function primaryImage(): HasOne
     {
-        return $this->hasMany(RoomImage::class)->where('is_primary', true)->limit(1);
+        return $this->hasOne(RoomImage::class)->where('is_primary', true);
     }
 
     public function bookings(): HasMany
@@ -96,8 +97,8 @@ class Room extends Model
     {
         return $query->where(function ($q) use ($term) {
             $q->where('name', 'ilike', "%{$term}%")
-              ->orWhere('building', 'ilike', "%{$term}%")
-              ->orWhere('description', 'ilike', "%{$term}%");
+                ->orWhere('building', 'ilike', "%{$term}%")
+                ->orWhere('description', 'ilike', "%{$term}%");
         });
     }
 }

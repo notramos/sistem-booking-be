@@ -3,11 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\RoomAvailabilityRequest;
+use App\Http\Requests\Api\StoreRoomRequest;
+use App\Http\Requests\Api\UpdateRoomRequest;
+use App\Http\Requests\Api\UploadRoomImageRequest;
+use App\Http\Resources\RoomImageResource;
+use App\Http\Resources\RoomResource;
 use App\Http\Response\ApiResponse;
-use App\Models\Room;
+use App\Models\RoomImage;
+use App\Repositories\BookingRepository;
 use App\Services\RoomService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class RoomController extends Controller
 {
@@ -18,54 +26,35 @@ class RoomController extends Controller
     public function index(Request $request): JsonResponse
     {
         $rooms = $this->roomService->list($request->all());
-        return $this->paginated($rooms);
+
+        return $this->paginated(RoomResource::collection($rooms));
     }
 
     public function show(string $id): JsonResponse
     {
         $room = $this->roomService->find($id);
-        return $this->success($room);
+
+        return $this->success(new RoomResource($room));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreRoomRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:room_categories,id',
-            'description' => 'nullable|string',
-            'capacity' => 'required|integer|min:1',
-            'floor' => 'nullable|string|max:50',
-            'building' => 'nullable|string|max:255',
-            'status' => 'nullable|in:available,maintenance,unavailable',
-            'facilities' => 'nullable|array',
-            'facilities.*' => 'exists:room_facilities,id',
-        ]);
+        $room = $this->roomService->create($request->validated());
 
-        $room = $this->roomService->create($validated);
-        return $this->created($room->load(['category', 'facilities']), 'Ruangan berhasil dibuat');
+        return $this->created(new RoomResource($room->load(['category', 'facilities'])), 'Ruangan berhasil dibuat');
     }
 
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateRoomRequest $request, string $id): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'category_id' => 'sometimes|exists:room_categories,id',
-            'description' => 'nullable|string',
-            'capacity' => 'sometimes|integer|min:1',
-            'floor' => 'nullable|string|max:50',
-            'building' => 'nullable|string|max:255',
-            'status' => 'nullable|in:available,maintenance,unavailable',
-            'facilities' => 'nullable|array',
-            'facilities.*' => 'exists:room_facilities,id',
-        ]);
+        $room = $this->roomService->update($id, $request->validated());
 
-        $room = $this->roomService->update($id, $validated);
-        return $this->success($room->load(['category', 'facilities']), 'Ruangan berhasil diperbarui');
+        return $this->success(new RoomResource($room->load(['category', 'facilities'])), 'Ruangan berhasil diperbarui');
     }
 
     public function destroy(string $id): JsonResponse
     {
         $this->roomService->delete($id);
+
         return $this->success(null, 'Ruangan berhasil dihapus');
     }
 
@@ -82,49 +71,40 @@ class RoomController extends Controller
         return $this->success($bookings);
     }
 
-    public function availability(string $id, Request $request): JsonResponse
+    public function availability(string $id, RoomAvailabilityRequest $request): JsonResponse
     {
-        $request->validate([
-            'date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-        ]);
+        $validated = $request->validated();
 
-        $hasConflict = app(\App\Repositories\BookingRepository::class)->hasConflict(
+        $hasConflict = app(BookingRepository::class)->hasConflict(
             roomId: $id,
-            date: $request->date,
-            startTime: $request->start_time,
-            endTime: $request->end_time,
+            date: $validated['date'],
+            startTime: $validated['start_time'],
+            endTime: $validated['end_time'],
         );
 
         return $this->success([
-            'available' => !$hasConflict,
-            'date' => $request->date,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
+            'available' => ! $hasConflict,
+            'date' => $validated['date'],
+            'start_time' => $validated['start_time'],
+            'end_time' => $validated['end_time'],
         ]);
     }
 
-    public function uploadImage(Request $request, string $id): JsonResponse
+    public function uploadImage(UploadRoomImageRequest $request, string $id): JsonResponse
     {
-        $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'is_primary' => 'boolean',
-        ]);
-
         $roomImage = $this->roomService->uploadImage(
             roomId: $id,
             image: $request->file('image'),
             isPrimary: $request->boolean('is_primary')
         );
 
-        return $this->created($roomImage, 'Gambar berhasil diunggah');
+        return $this->created(new RoomImageResource($roomImage), 'Gambar berhasil diunggah');
     }
 
     public function deleteImage(string $roomId, string $imageId): JsonResponse
     {
-        $image = \App\Models\RoomImage::where('room_id', $roomId)->findOrFail($imageId);
-        \Illuminate\Support\Facades\Storage::disk('public')->delete($image->image_path);
+        $image = RoomImage::where('room_id', $roomId)->findOrFail($imageId);
+        Storage::disk('public')->delete($image->image_path);
         $image->delete();
 
         return $this->success(null, 'Gambar berhasil dihapus');
@@ -132,8 +112,8 @@ class RoomController extends Controller
 
     public function setPrimaryImage(string $roomId, string $imageId): JsonResponse
     {
-        \App\Models\RoomImage::where('room_id', $roomId)->update(['is_primary' => false]);
-        \App\Models\RoomImage::where('room_id', $roomId)->where('id', $imageId)->update(['is_primary' => true]);
+        RoomImage::where('room_id', $roomId)->update(['is_primary' => false]);
+        RoomImage::where('room_id', $roomId)->where('id', $imageId)->update(['is_primary' => true]);
 
         return $this->success(null, 'Gambar utama berhasil diatur');
     }

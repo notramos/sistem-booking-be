@@ -5,8 +5,8 @@ namespace App\Services;
 use App\Enums\BookingStatus;
 use App\Models\Booking;
 use App\Models\BookingApproval;
-use App\Models\BookingLog;
 use App\Repositories\BookingRepository;
+use App\Repositories\RoomRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -14,6 +14,7 @@ class ApprovalService
 {
     public function __construct(
         private BookingRepository $bookingRepo,
+        private RoomRepository $roomRepo,
         private NotificationService $notificationService,
         private AuditService $auditService,
     ) {}
@@ -29,18 +30,13 @@ class ApprovalService
 
             $booking->update(['status' => BookingStatus::APPROVED->value]);
 
+            $this->roomRepo->clearAvailabilityCache();
+
             BookingApproval::create([
                 'booking_id' => $booking->id,
                 'approver_id' => $approverId,
                 'action' => 'approved',
                 'notes' => $notes,
-            ]);
-
-            BookingLog::create([
-                'booking_id' => $booking->id,
-                'user_id' => $approverId,
-                'action' => 'approved',
-                'description' => 'Booking disetujui' . ($notes ? ': ' . $notes : ''),
             ]);
 
             $this->auditService->log('booking.approved', $booking);
@@ -61,18 +57,13 @@ class ApprovalService
 
             $booking->update(['status' => BookingStatus::REJECTED->value]);
 
+            $this->roomRepo->clearAvailabilityCache();
+
             BookingApproval::create([
                 'booking_id' => $booking->id,
                 'approver_id' => $approverId,
                 'action' => 'rejected',
                 'notes' => $reason,
-            ]);
-
-            BookingLog::create([
-                'booking_id' => $booking->id,
-                'user_id' => $approverId,
-                'action' => 'rejected',
-                'description' => 'Booking ditolak: ' . $reason,
             ]);
 
             $this->auditService->log('booking.rejected', $booking);

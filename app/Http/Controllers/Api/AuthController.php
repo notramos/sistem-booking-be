@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\ForgotPasswordRequest;
+use App\Http\Requests\Api\LoginRequest;
+use App\Http\Requests\Api\ResetPasswordRequest;
+use App\Http\Resources\UserResource;
 use App\Http\Response\ApiResponse;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -15,22 +19,17 @@ class AuthController extends Controller
 {
     use ApiResponse;
 
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ]);
-
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['Email atau password salah'],
             ]);
         }
 
-        if (!$user->is_active) {
+        if (! $user->is_active) {
             return $this->error('Akun Anda telah dinonaktifkan', 403);
         }
 
@@ -39,7 +38,7 @@ class AuthController extends Controller
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return $this->success([
-            'user' => $user->load('roles'),
+            'user' => new UserResource($user->load('roles')),
             'token' => $token,
         ], 'Login berhasil');
     }
@@ -53,13 +52,11 @@ class AuthController extends Controller
 
     public function user(Request $request): JsonResponse
     {
-        return $this->success($request->user()->load('roles.permissions'));
+        return $this->success(new UserResource($request->user()->load('roles.permissions')));
     }
 
-    public function forgotPassword(Request $request): JsonResponse
+    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        $request->validate(['email' => 'required|email']);
-
         $status = Password::sendResetLink($request->only('email'));
 
         return $status === Password::RESET_LINK_SENT
@@ -67,14 +64,8 @@ class AuthController extends Controller
             : $this->error('Gagal mengirim link reset password', 400);
     }
 
-    public function resetPassword(Request $request): JsonResponse
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
     {
-        $request->validate([
-            'token' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {

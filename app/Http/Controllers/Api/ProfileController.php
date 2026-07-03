@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\ChangePasswordRequest;
+use App\Http\Requests\Api\UpdateProfileRequest;
+use App\Http\Requests\Api\UploadAvatarRequest;
+use App\Http\Resources\UserResource;
 use App\Http\Response\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -14,35 +18,22 @@ class ProfileController extends Controller
 
     public function show(): JsonResponse
     {
-        return $this->success(auth()->user()->load('roles'));
+        return $this->success(new UserResource(auth()->user()->load('roles')));
     }
 
-    public function update(Request $request): JsonResponse
+    public function update(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = auth()->user();
+        $user->update($request->validated());
+
+        return $this->success(new UserResource($user), 'Profil berhasil diperbarui');
+    }
+
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
         $user = auth()->user();
 
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'department' => 'nullable|string|max:100',
-            'position' => 'nullable|string|max:100',
-        ]);
-
-        $user->update($validated);
-
-        return $this->success($user, 'Profil berhasil diperbarui');
-    }
-
-    public function changePassword(Request $request): JsonResponse
-    {
-        $request->validate([
-            'current_password' => 'required|string',
-            'new_password' => 'required|string|min:8|confirmed',
-        ]);
-
-        $user = auth()->user();
-
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return $this->error('Password saat ini salah', 422);
         }
 
@@ -51,21 +42,17 @@ class ProfileController extends Controller
         return $this->success(null, 'Password berhasil diubah');
     }
 
-    public function uploadAvatar(Request $request): JsonResponse
+    public function uploadAvatar(UploadAvatarRequest $request): JsonResponse
     {
-        $request->validate([
-            'avatar' => 'required|image|mimes:jpeg,png,jpg|max:1024',
-        ]);
-
         $user = auth()->user();
         $path = $request->file('avatar')->store('avatars', 'public');
 
         if ($user->avatar) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+            Storage::disk('public')->delete($user->avatar);
         }
 
         $user->update(['avatar' => $path]);
 
-        return $this->success(['avatar_url' => asset('storage/' . $path)], 'Avatar berhasil diunggah');
+        return $this->success(['avatar_url' => asset('storage/'.$path)], 'Avatar berhasil diunggah');
     }
 }

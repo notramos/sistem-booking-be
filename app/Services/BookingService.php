@@ -7,7 +7,6 @@ use App\Enums\BookingStatus;
 use App\Exceptions\BookingConflictException;
 use App\Exceptions\RoomNotAvailableException;
 use App\Models\Booking;
-use App\Models\BookingLog;
 use App\Models\MaintenanceSchedule;
 use App\Repositories\BookingRepository;
 use App\Repositories\RoomRepository;
@@ -26,19 +25,21 @@ class BookingService
     public function create(BookingDTO $dto): Booking
     {
         return DB::transaction(function () use ($dto) {
+            $this->bookingRepo->lockRoom($dto->roomId);
+
             $room = $this->roomRepo->findOrFail($dto->roomId);
 
-            if (!$room->isAvailable()) {
+            if (! $room->isAvailable()) {
                 throw new RoomNotAvailableException('Ruangan sedang tidak tersedia untuk dipesan');
             }
 
             $isUnderMaintenance = MaintenanceSchedule::forRoom($dto->roomId, $dto->bookingDate)
                 ->where(function ($q) use ($dto) {
                     $q->where('is_all_day', true)
-                      ->orWhere(function ($q) use ($dto) {
-                          $q->where('start_time', '<', $dto->endTime)
-                            ->where('end_time', '>', $dto->startTime);
-                      });
+                        ->orWhere(function ($q) use ($dto) {
+                            $q->where('start_time', '<', $dto->endTime)
+                                ->where('end_time', '>', $dto->startTime);
+                        });
                 })
                 ->exists();
 
@@ -76,6 +77,62 @@ class BookingService
 
             $this->auditService->log('booking.created', $booking);
             $this->notificationService->bookingCreated($booking);
+            $this->roomRepo->clearAvailabilityCache();
+
+            return $booking;
+        });
+    }
+
+    /**
+     * Update a pending booking's fields. Re-validates room availability (maintenance
+     * schedule + conflicts) under a per-room advisory lock whenever the time changes,
+     * mirroring the checks create() performs, and invalidates the availability cache
+     * so other users don't see stale slot data.
+     */
+    public function updateTime(string $id, array $data): Booking
+    {
+        return DB::transaction(function () use ($id, $data) {
+            $booking = $this->bookingRepo->findOrFail($id);
+
+            $startTime = $data['start_time'] ?? $booking->start_time;
+            $endTime = $data['end_time'] ?? $booking->end_time;
+            $timeChanged = isset($data['start_time']) || isset($data['end_time']);
+
+            if ($timeChanged) {
+                $this->bookingRepo->lockRoom($booking->room_id);
+
+                $isUnderMaintenance = MaintenanceSchedule::forRoom($booking->room_id, $booking->booking_date)
+                    ->where(function ($q) use ($startTime, $endTime) {
+                        $q->where('is_all_day', true)
+                            ->orWhere(function ($q) use ($startTime, $endTime) {
+                                $q->where('start_time', '<', $endTime)
+                                    ->where('end_time', '>', $startTime);
+                            });
+                    })
+                    ->exists();
+
+                if ($isUnderMaintenance) {
+                    throw new RoomNotAvailableException('Ruangan sedang dalam jadwal perbaikan pada waktu tersebut');
+                }
+
+                $hasConflict = $this->bookingRepo->hasConflict(
+                    roomId: $booking->room_id,
+                    date: $booking->booking_date,
+                    startTime: $startTime,
+                    endTime: $endTime,
+                    excludeBookingId: $booking->id,
+                );
+
+                if ($hasConflict) {
+                    throw new BookingConflictException('Waktu yang dipilih bertabrakan dengan booking lain');
+                }
+            }
+
+            $booking->update($data);
+
+            if ($timeChanged) {
+                $this->roomRepo->clearAvailabilityCache();
+            }
 
             return $booking;
         });
@@ -86,7 +143,7 @@ class BookingService
         return DB::transaction(function () use ($id) {
             $booking = $this->bookingRepo->findOrFail($id);
 
-            if (!$booking->isCancellable()) {
+            if (! $booking->isCancellable()) {
                 throw new \InvalidArgumentException('Booking tidak dapat dibatalkan');
             }
 
@@ -97,13 +154,7 @@ class BookingService
 
             $this->auditService->log('booking.cancelled', $booking);
             $this->notificationService->bookingCancelled($booking);
-
-            BookingLog::create([
-                'booking_id' => $booking->id,
-                'user_id' => auth()->id(),
-                'action' => 'cancelled',
-                'description' => 'Booking dibatalkan oleh ' . auth()->user()->name,
-            ]);
+            $this->roomRepo->clearAvailabilityCache();
 
             return $booking;
         });

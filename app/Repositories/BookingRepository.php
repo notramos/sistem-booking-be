@@ -4,11 +4,33 @@ namespace App\Repositories;
 
 use App\Enums\BookingStatus;
 use App\Models\Booking;
-use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class BookingRepository
 {
+    /**
+     * Serialize booking create/update for a room within the current transaction.
+     *
+     * hasConflict()'s SELECT ... FOR UPDATE only locks rows that already exist, so two
+     * concurrent requests for a still-open slot can both pass the check before either
+     * INSERT commits (classic phantom-read race). This advisory lock is per-room and is
+     * held for the lifetime of the enclosing transaction, so it fully serializes booking
+     * writes for that room and closes the race. Must be called inside DB::transaction().
+     *
+     * Postgres-only (production/docker always run Postgres, see docker-compose.yml).
+     * No-op on other drivers (e.g. sqlite in tests) since they lack advisory locks.
+     */
+    public function lockRoom(string $roomId): void
+    {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        DB::statement('SELECT pg_advisory_xact_lock(hashtext(?))', [$roomId]);
+    }
+
     public function findOrFail(string $id): Booking
     {
         return Booking::with(['user', 'room', 'approval', 'logs.user'])->findOrFail($id);
@@ -33,7 +55,7 @@ class BookingRepository
             ->where(function ($q) use ($startTime, $endTime) {
                 $q->where(function ($q) use ($startTime, $endTime) {
                     $q->where('start_time', '<', $endTime)
-                      ->where('end_time', '>', $startTime);
+                        ->where('end_time', '>', $startTime);
                 });
             });
 
@@ -81,8 +103,8 @@ class BookingRepository
             'room' => $booking->room->name,
             'room_id' => $booking->room_id,
             'user' => $booking->user->name,
-            'start' => $booking->booking_date . 'T' . $booking->start_time,
-            'end' => $booking->booking_date . 'T' . $booking->end_time,
+            'start' => $booking->booking_date.'T'.$booking->start_time,
+            'end' => $booking->booking_date.'T'.$booking->end_time,
             'start_time' => $booking->start_time,
             'end_time' => $booking->end_time,
             'status' => $booking->status,

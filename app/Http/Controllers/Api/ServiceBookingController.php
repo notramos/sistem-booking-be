@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\BookingStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\StoreServiceBookingRequest;
+use App\Http\Resources\BookingResource;
 use App\Http\Response\ApiResponse;
 use App\Models\Booking;
-use App\Models\BookingLog;
-use App\Enums\BookingStatus;
-use App\Services\NotificationService;
 use App\Services\AuditService;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ServiceBookingController extends Controller
@@ -22,24 +22,12 @@ class ServiceBookingController extends Controller
         private AuditService $auditService,
     ) {}
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreServiceBookingRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'room_id' => 'required|exists:rooms,id',
-            'booking_date' => 'required|date|after_or_equal:today',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'service_type' => 'required|string|max:255',
-            'contact' => 'required|string|max:255',
-            'equipment' => 'nullable|array',
-            'equipment.*' => 'string',
-            'other_equipment' => 'nullable|string|max:255',
-            'notes' => 'nullable|string|max:1000',
-            'dynamic_fields' => 'nullable|array',
-        ]);
+        $validated = $request->validated();
 
         $equipment = $validated['equipment'] ?? [];
-        if (!empty($validated['other_equipment'])) {
+        if (! empty($validated['other_equipment'])) {
             $equipment[] = $validated['other_equipment'];
         }
 
@@ -60,7 +48,7 @@ class ServiceBookingController extends Controller
             $booking = Booking::create([
                 'user_id' => auth()->id(),
                 'room_id' => $validated['room_id'],
-                'title' => 'Pelayanan: ' . $typeLabel,
+                'title' => 'Pelayanan: '.$typeLabel,
                 'description' => null,
                 'booking_date' => $validated['booking_date'],
                 'start_time' => $validated['start_time'],
@@ -87,6 +75,6 @@ class ServiceBookingController extends Controller
             return $booking;
         });
 
-        return $this->created($booking, 'Permohonan pelayanan gereja berhasil dikirim');
+        return $this->created(new BookingResource($booking), 'Permohonan pelayanan gereja berhasil dikirim');
     }
 }

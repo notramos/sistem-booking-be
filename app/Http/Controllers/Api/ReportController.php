@@ -3,10 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\ExportPdfReportRequest;
+use App\Http\Requests\Api\MonthlyReportRequest;
 use App\Http\Response\ApiResponse;
 use App\Services\ReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Concerns\FromArray;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
@@ -45,26 +50,15 @@ class ReportController extends Controller
         return $this->paginated($data);
     }
 
-    public function monthly(Request $request): JsonResponse
+    public function monthly(MonthlyReportRequest $request): JsonResponse
     {
-        $request->validate([
-            'year' => 'required|digits:4',
-            'month' => 'required|digits:2|between:01,12',
-        ]);
-
         $data = $this->reportService->monthly($request->year, $request->month);
 
         return $this->success($data);
     }
 
-    public function exportPdf(Request $request)
+    public function exportPdf(ExportPdfReportRequest $request)
     {
-        $request->validate([
-            'type' => 'required|in:bookings,utilization',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date',
-        ]);
-
         return $this->reportService->exportPdf($request->type, $request->only(['start_date', 'end_date']));
     }
 
@@ -80,16 +74,17 @@ class ReportController extends Controller
             default => throw new \InvalidArgumentException('Invalid report type'),
         };
 
-        $filename = "laporan-{$type}-" . now()->format('YmdHis') . '.xlsx';
+        $filename = "laporan-{$type}-".now()->format('YmdHis').'.xlsx';
 
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new class($data, $type) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings {
+        return Excel::download(
+            new class($data, $type) implements FromArray, WithHeadings
+            {
                 public function __construct(private $data, private string $type) {}
 
                 public function array(): array
                 {
                     if ($this->type === 'bookings') {
-                        return $this->data->map(fn($b) => [
+                        return $this->data->map(fn ($b) => [
                             'Judul' => $b->title,
                             'Ruangan' => $b->room->name ?? '-',
                             'Pemesan' => $b->user->name ?? '-',
@@ -99,6 +94,7 @@ class ReportController extends Controller
                             'Status' => $b->status,
                         ])->toArray();
                     }
+
                     return $this->data->toArray();
                 }
 

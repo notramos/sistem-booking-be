@@ -11,7 +11,11 @@ class CongregationService extends Model
     use HasUuids;
 
     protected $fillable = [
-        'user_id', 'service_type', 'applicant_name', 'address', 'contact',
+        'user_id', 'service_type', 'applicant_name', 'applicant_gender',
+        'baptismal_name', 'birth_place', 'birth_date', 'address', 'contact',
+        'phone', 'mobile_phone', 'neighborhood', 'region', 'parish',
+        'father_name', 'father_religion', 'mother_name', 'mother_religion',
+        'school', 'grade', 'occupation', 'family_card_number',
         'service_date', 'description', 'status', 'notes', 'dynamic_fields',
     ];
 
@@ -19,6 +23,7 @@ class CongregationService extends Model
     {
         return [
             'service_date' => 'date:Y-m-d',
+            'birth_date' => 'date:Y-m-d',
             'dynamic_fields' => 'array',
         ];
     }

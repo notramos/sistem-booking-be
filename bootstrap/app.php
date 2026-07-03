@@ -1,11 +1,15 @@
 <?php
 
-use App\Http\Middleware\DebugRequest;
 use App\Http\Middleware\ForceJsonResponse;
+use App\Jobs\AutoCompleteBooking;
+use App\Jobs\SendBookingReminder;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,14 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'force.json' => ForceJsonResponse::class,
-            'debug.api' => \App\Http\Middleware\DebugRequest::class,
-            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
-            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
         ]);
 
         $middleware->api(prepend: [
             ForceJsonResponse::class,
-            DebugRequest::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -32,8 +34,8 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*'),
         );
     })
-    ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
-        $schedule->job(new \App\Jobs\AutoCompleteBooking)->hourly();
-        $schedule->job(new \App\Jobs\SendBookingReminder)->dailyAt('08:00');
+    ->withSchedule(function (Schedule $schedule) {
+        $schedule->job(new AutoCompleteBooking)->hourly();
+        $schedule->job(new SendBookingReminder)->dailyAt('08:00');
     })
     ->create();

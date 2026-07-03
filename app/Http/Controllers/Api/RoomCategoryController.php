@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\StoreRoomCategoryRequest;
+use App\Http\Requests\Api\UpdateRoomCategoryRequest;
+use App\Http\Resources\RoomCategoryResource;
 use App\Http\Response\ApiResponse;
 use App\Models\RoomCategory;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class RoomCategoryController extends Controller
@@ -15,31 +17,22 @@ class RoomCategoryController extends Controller
 
     public function index(): JsonResponse
     {
-        return $this->success(RoomCategory::where('is_active', true)->get());
+        return $this->success(RoomCategoryResource::collection(RoomCategory::where('is_active', true)->get()));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreRoomCategoryRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:room_categories,name',
-            'description' => 'nullable|string',
-        ]);
-
+        $validated = $request->validated();
         $validated['slug'] = Str::slug($validated['name']);
         $category = RoomCategory::create($validated);
 
-        return $this->created($category, 'Kategori berhasil dibuat');
+        return $this->created(new RoomCategoryResource($category), 'Kategori berhasil dibuat');
     }
 
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateRoomCategoryRequest $request, string $id): JsonResponse
     {
         $category = RoomCategory::findOrFail($id);
-
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255|unique:room_categories,name,' . $id,
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         if (isset($validated['name'])) {
             $validated['slug'] = Str::slug($validated['name']);
@@ -47,7 +40,7 @@ class RoomCategoryController extends Controller
 
         $category->update($validated);
 
-        return $this->success($category, 'Kategori berhasil diperbarui');
+        return $this->success(new RoomCategoryResource($category), 'Kategori berhasil diperbarui');
     }
 
     public function destroy(string $id): JsonResponse

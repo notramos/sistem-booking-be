@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\CongregationServiceController;
 use App\Http\Controllers\Api\RoomCategoryController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\RoomFacilityController;
@@ -65,7 +66,11 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::post('bookings/{booking}/reject', [ApprovalController::class, 'reject'])->middleware('can:bookings.reject');
 
     // Congregation Services
-    Route::post('congregation-services', [\App\Http\Controllers\Api\CongregationServiceController::class, 'store']);
+    Route::get('congregation-services', [CongregationServiceController::class, 'index']);
+    Route::get('congregation-services/{id}', [CongregationServiceController::class, 'show']);
+    Route::post('congregation-services', [CongregationServiceController::class, 'store']);
+    Route::post('congregation-services/{id}/approve', [CongregationServiceController::class, 'approve'])->middleware('can:bookings.approve');
+    Route::post('congregation-services/{id}/reject', [CongregationServiceController::class, 'reject'])->middleware('can:bookings.reject');
 
     // Notifications
     Route::get('notifications', [NotificationController::class, 'index']);
