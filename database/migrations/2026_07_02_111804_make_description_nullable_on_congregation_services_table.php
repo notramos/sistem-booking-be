@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -10,7 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement('ALTER TABLE congregation_services ALTER COLUMN description DROP NOT NULL');
+        Schema::table('congregation_services', function (Blueprint $table) {
+            $table->text('description')->nullable()->change();
+        });
     }
 
     /**
@@ -19,6 +23,9 @@ return new class extends Migration
     public function down(): void
     {
         DB::statement("UPDATE congregation_services SET description = '' WHERE description IS NULL");
-        DB::statement('ALTER TABLE congregation_services ALTER COLUMN description SET NOT NULL');
+
+        Schema::table('congregation_services', function (Blueprint $table) {
+            $table->text('description')->nullable(false)->change();
+        });
     }
 };
