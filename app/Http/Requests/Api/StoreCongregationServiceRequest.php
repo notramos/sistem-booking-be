@@ -44,6 +44,7 @@ class StoreCongregationServiceRequest extends FormRequest
             'service_date' => 'nullable|date',
             'description' => 'nullable|string|max:2000',
             'dynamic_fields' => 'nullable|array',
+            'signature_pemohon' => ['nullable', 'string', 'regex:/^data:image\/png;base64,/'],
         ];
     }
 

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\RoomCategoryController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\RoomFacilityController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WilayahController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,6 +38,7 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::put('profile', [ProfileController::class, 'update']);
     Route::put('profile/password', [ProfileController::class, 'changePassword']);
     Route::post('profile/avatar', [ProfileController::class, 'uploadAvatar']);
+    Route::put('profile/signature', [ProfileController::class, 'updateSignature']);
 
     // Room categories & facilities (viewable by all)
     Route::get('room-categories', [RoomCategoryController::class, 'index']);
@@ -57,9 +59,7 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::get('bookings/{booking}', [BookingController::class, 'show']);
     Route::put('bookings/{booking}', [BookingController::class, 'update']);
     Route::delete('bookings/{booking}', [BookingController::class, 'destroy']);
-
-    // Service Bookings
-    Route::post('bookings/service', [\App\Http\Controllers\Api\ServiceBookingController::class, 'store']);
+    Route::post('bookings/{booking}/signature', [BookingController::class, 'sign']);
 
     // Approvals (sekretariat/admin)
     Route::post('bookings/{booking}/approve', [ApprovalController::class, 'approve'])->middleware('can:bookings.approve');
@@ -71,6 +71,9 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::post('congregation-services', [CongregationServiceController::class, 'store']);
     Route::post('congregation-services/{id}/approve', [CongregationServiceController::class, 'approve'])->middleware('can:bookings.approve');
     Route::post('congregation-services/{id}/reject', [CongregationServiceController::class, 'reject'])->middleware('can:bookings.reject');
+
+    // Wilayah & Lingkungan (master data untuk form Pelayanan Umat)
+    Route::get('wilayah', [WilayahController::class, 'index']);
 
     // Notifications
     Route::get('notifications', [NotificationController::class, 'index']);

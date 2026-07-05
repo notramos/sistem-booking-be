@@ -20,6 +20,7 @@ class User extends Authenticatable
         'password',
         'phone',
         'avatar',
+        'signature',
         'department',
         'position',
         'nip',

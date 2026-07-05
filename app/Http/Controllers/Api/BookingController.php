@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\DTOs\BookingDTO;
 use App\DTOs\CalendarFilterDTO;
+use App\Enums\BookingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreBookingRequest;
 use App\Http\Requests\Api\UpdateBookingRequest;
@@ -70,7 +71,7 @@ class BookingController extends Controller
     {
         $booking = Booking::with([
             'user', 'room.category', 'room.facilities', 'room.images',
-            'approval.approver:id,name', 'logs.user:id,name',
+            'approval.approver:id,name', 'logs.user:id,name', 'signedBy:id,name',
         ])->findOrFail($id);
 
         $this->authorize('view', $booking);
@@ -104,9 +105,59 @@ class BookingController extends Controller
 
     public function myBookings(Request $request): JsonResponse
     {
-        $bookings = $this->bookingService->getUserBookings($request->status);
+        $bookings = $this->bookingService->getUserBookings(
+            $request->status,
+            $request->integer('page') ?: 1,
+            $request->search,
+            $request->integer('per_page') ?: 10,
+        );
 
-        return $this->success(BookingResource::collection($bookings));
+        return $this->paginated(BookingResource::collection($bookings));
+    }
+
+    public function sign(Request $request, string $id): JsonResponse
+    {
+        $booking = Booking::findOrFail($id);
+
+        $validated = $request->validate([
+            'role' => 'required|in:pemohon,petugas',
+            'signature' => ['required', 'string', 'regex:/^data:image\/png;base64,/'],
+        ]);
+
+        $user = $request->user();
+
+        if ($validated['role'] === 'pemohon') {
+            if ($user->id !== $booking->user_id) {
+                return $this->error('Anda tidak berhak menandatangani sebagai pemohon untuk booking ini', 403);
+            }
+
+            if ($booking->signature_pemohon) {
+                return $this->error('Booking ini sudah ditandatangani oleh pemohon', 422);
+            }
+
+            $booking->update([
+                'signature_pemohon' => $validated['signature'],
+                'signature_pemohon_at' => now(),
+            ]);
+        } else {
+            $this->authorize('approve', Booking::class);
+
+            if ($booking->status !== BookingStatus::APPROVED->value) {
+                return $this->error('Booking hanya dapat ditandatangani petugas setelah disetujui', 422);
+            }
+
+            if ($booking->signature_petugas) {
+                return $this->error('Booking ini sudah ditandatangani oleh petugas', 422);
+            }
+
+            $booking->update([
+                'signature_petugas' => $validated['signature'],
+                'signature_petugas_at' => now(),
+                'signed_petugas_by' => $user->id,
+            ]);
+        }
+
+        return $this->success(new BookingResource($booking->fresh(['user', 'room', 'signedBy'])), 'Tanda tangan berhasil disimpan');
     }
 
     public function calendar(Request $request): JsonResponse

@@ -160,9 +160,9 @@ class BookingService
         });
     }
 
-    public function getUserBookings(?string $status = null): Collection
+    public function getUserBookings(?string $status = null, int $page = 1, ?string $search = null, int $perPage = 10): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        return $this->bookingRepo->getUserBookings(auth()->id(), $status);
+        return $this->bookingRepo->getUserBookings(auth()->id(), $status, $page, $search, $perPage);
     }
 
     public function getCalendarData(string $start, string $end, ?string $roomId = null): Collection

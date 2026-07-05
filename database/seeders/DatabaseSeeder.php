@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             RoomCategorySeeder::class,
             RoomFacilitySeeder::class,
             DemoRoomSeeder::class,
+            WilayahLingkunganSeeder::class,
         ]);
     }
 }

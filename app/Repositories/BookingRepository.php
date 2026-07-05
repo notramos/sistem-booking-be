@@ -70,7 +70,7 @@ class BookingRepository
         return $query->exists();
     }
 
-    public function getUserBookings(string $userId, ?string $status = null): Collection
+    public function getUserBookings(string $userId, ?string $status = null, int $page = 1, ?string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         $query = Booking::with(['room:id,name,slug', 'approval'])
             ->where('user_id', $userId)
@@ -80,7 +80,11 @@ class BookingRepository
             $query->where('status', $status);
         }
 
-        return $query->get();
+        if ($search) {
+            $query->whereRaw('LOWER(title) LIKE ?', ['%'.mb_strtolower($search).'%']);
+        }
+
+        return $query->paginate($perPage, ['*'], 'page', $page);
     }
 
     public function getCalendarData(string $start, string $end, ?string $roomId = null): Collection
