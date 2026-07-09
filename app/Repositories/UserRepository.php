@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\User;
+use App\Support\Pagination;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class UserRepository
@@ -50,6 +51,6 @@ class UserRepository
         $sortBy = $filters['sort_by'] ?? 'created_at';
         $sortOrder = $filters['sort_order'] ?? 'desc';
 
-        return $query->orderBy($sortBy, $sortOrder)->paginate($filters['per_page'] ?? 15);
+        return $query->orderBy($sortBy, $sortOrder)->paginate(Pagination::perPage($filters['per_page'] ?? null, 15));
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\NotificationResource;
 use App\Http\Response\ApiResponse;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,7 +18,7 @@ class NotificationController extends Controller
         $notifications = auth()->user()
             ->notifications()
             ->orderBy('created_at', 'desc')
-            ->paginate($request->per_page ?? 20);
+            ->paginate(Pagination::perPage($request->per_page, 20));
 
         return $this->paginated(NotificationResource::collection($notifications));
     }

@@ -33,6 +33,23 @@ class BookingService
                 throw new RoomNotAvailableException('Ruangan sedang tidak tersedia untuk dipesan');
             }
 
+            // Defense-in-depth: aturan yang sama sudah ditegakkan di StoreBookingRequest,
+            // guard ini melindungi bila ada pemanggil yang melewati FormRequest.
+            $hours = config('booking.operating_hours');
+            if ($dto->startTime < $hours['open'] || $dto->endTime > $hours['close']) {
+                throw new RoomNotAvailableException("Waktu booking di luar jam operasional ({$hours['open']}–{$hours['close']})");
+            }
+
+            if ($dto->expectedAttendees !== null && (int) $dto->expectedAttendees > (int) $room->capacity) {
+                throw new RoomNotAvailableException("Jumlah peserta melebihi kapasitas ruangan ({$room->capacity} orang)");
+            }
+
+            $minDate = now()->addDays(config('booking.min_advance_days'))->toDateString();
+            $maxDate = now()->addDays(config('booking.max_advance_days'))->toDateString();
+            if ($dto->bookingDate < $minDate || $dto->bookingDate > $maxDate) {
+                throw new RoomNotAvailableException('Tanggal booking di luar rentang yang diizinkan (H+'.config('booking.min_advance_days').' s/d H+'.config('booking.max_advance_days').' dari hari ini)');
+            }
+
             $isUnderMaintenance = MaintenanceSchedule::forRoom($dto->roomId, $dto->bookingDate)
                 ->where(function ($q) use ($dto) {
                     $q->where('is_all_day', true)

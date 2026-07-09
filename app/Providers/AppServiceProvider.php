@@ -15,6 +15,9 @@ use App\Services\CalendarService;
 use App\Services\NotificationService;
 use App\Services\ReportService;
 use App\Services\RoomService;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -37,5 +40,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         \App\Models\Booking::observe(\App\Observers\BookingObserver::class);
+
+        // Limiter global untuk seluruh route 'api' (lihat bootstrap/app.php ->throttleApi()).
+        // Endpoint yang butuh batas lebih ketat (mis. login) tetap punya throttle sendiri.
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
     }
 }

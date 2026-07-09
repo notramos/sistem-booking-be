@@ -12,6 +12,7 @@ use App\Models\CongregationService;
 use App\Models\User;
 use App\Notifications\CongregationServiceCreated;
 use App\Services\AuditService;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
@@ -39,7 +40,7 @@ class CongregationServiceController extends Controller
             $query->where('service_type', $request->service_type);
         }
 
-        return $this->paginated(CongregationServiceResource::collection($query->paginate($request->per_page ?? 15)));
+        return $this->paginated(CongregationServiceResource::collection($query->paginate(Pagination::perPage($request->per_page, 15))));
     }
 
     public function show(string $id): JsonResponse

@@ -14,6 +14,7 @@ use App\Models\Booking;
 use App\Services\ApprovalService;
 use App\Services\BookingService;
 use App\Services\CalendarService;
+use App\Support\Pagination;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,7 +39,7 @@ class BookingController extends Controller
             ->when($request->room_id, fn ($q, $r) => $q->where('room_id', $r))
             ->when($request->date, fn ($q, $d) => $q->where('booking_date', $d))
             ->orderBy('created_at', 'desc')
-            ->paginate($request->per_page ?? 15);
+            ->paginate(Pagination::perPage($request->per_page, 15));
 
         return $this->paginated(BookingResource::collection($bookings));
     }
@@ -109,7 +110,7 @@ class BookingController extends Controller
             $request->status,
             $request->integer('page') ?: 1,
             $request->search,
-            $request->integer('per_page') ?: 10,
+            Pagination::perPage($request->per_page, 10),
         );
 
         return $this->paginated(BookingResource::collection($bookings));

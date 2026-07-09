@@ -28,6 +28,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             ForceJsonResponse::class,
         ]);
+
+        // Autentikasi SPA Sanctum berbasis cookie session HttpOnly (bukan bearer
+        // token) untuk request dari domain yang terdaftar di SANCTUM_STATEFUL_DOMAINS.
+        $middleware->statefulApi();
+
+        // Limiter global (definisi 'api' di AppServiceProvider::boot()).
+        $middleware->throttleApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

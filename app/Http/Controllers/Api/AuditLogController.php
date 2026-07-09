@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\AuditLogResource;
 use App\Http\Response\ApiResponse;
 use App\Models\AuditLog;
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,7 +23,7 @@ class AuditLogController extends Controller
             ->when($request->start_date, fn ($q, $d) => $q->whereDate('created_at', '>=', $d))
             ->when($request->end_date, fn ($q, $d) => $q->whereDate('created_at', '<=', $d))
             ->orderBy('created_at', 'desc')
-            ->paginate($request->per_page ?? 25);
+            ->paginate(Pagination::perPage($request->per_page, 25));
 
         return $this->paginated(AuditLogResource::collection($logs));
     }

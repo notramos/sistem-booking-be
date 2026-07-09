@@ -3,8 +3,10 @@
 return [
     'min_duration_minutes' => 30,
     'max_duration_hours' => 8,
+    'min_advance_days' => 7,
     'max_advance_days' => 30,
     'reminder_hours_before' => 24,
+    'operating_hours' => ['open' => '06:00', 'close' => '22:00'],
     'allowed_status_transitions' => [
         'pending' => ['approved', 'rejected', 'cancelled'],
         'approved' => ['cancelled', 'completed'],

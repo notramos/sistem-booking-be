@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateBookingRequest extends FormRequest
@@ -20,6 +21,22 @@ class UpdateBookingRequest extends FormRequest
             'end_time' => 'sometimes|date_format:H:i|after:start_time',
             'notes' => 'nullable|string',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $hours = config('booking.operating_hours');
+            $start = $this->input('start_time');
+            $end = $this->input('end_time');
+
+            if ($start && $start < $hours['open']) {
+                $validator->errors()->add('start_time', "Waktu mulai tidak boleh sebelum jam operasional ({$hours['open']}).");
+            }
+            if ($end && $end > $hours['close']) {
+                $validator->errors()->add('end_time', "Waktu selesai tidak boleh melewati jam operasional ({$hours['close']}).");
+            }
+        });
     }
 
     public function attributes(): array

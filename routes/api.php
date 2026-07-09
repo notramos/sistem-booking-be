@@ -24,8 +24,8 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
-Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
+Route::post('auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 
 // Authenticated routes
 Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
@@ -46,9 +46,12 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
 
     // Rooms (viewable by all authenticated)
     Route::get('rooms', [RoomController::class, 'index']);
+    // Path statis harus didaftarkan sebelum wildcard {room} agar tidak tertangkap sebagai id
+    Route::get('rooms/recommendations', [RoomController::class, 'recommendations']);
     Route::get('rooms/{room}', [RoomController::class, 'show']);
     Route::get('rooms/{room}/schedules', [RoomController::class, 'schedules']);
     Route::get('rooms/{room}/availability', [RoomController::class, 'availability']);
+    Route::get('rooms/{room}/day-availability', [RoomController::class, 'dayAvailability']);
 
     // Bookings
     Route::get('bookings', [BookingController::class, 'index']);

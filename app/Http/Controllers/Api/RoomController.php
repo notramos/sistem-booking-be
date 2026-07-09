@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\RoomAvailabilityRequest;
+use App\Http\Requests\Api\RoomRecommendationRequest;
 use App\Http\Requests\Api\StoreRoomRequest;
 use App\Http\Requests\Api\UpdateRoomRequest;
 use App\Http\Requests\Api\UploadRoomImageRequest;
@@ -69,6 +70,24 @@ class RoomController extends Controller
             ->get(['id', 'title', 'booking_date', 'start_time', 'end_time', 'status']);
 
         return $this->success($bookings);
+    }
+
+    public function recommendations(RoomRecommendationRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        return $this->success(
+            $this->roomService->recommendRooms($validated['date'], (int) $validated['attendees'])
+        );
+    }
+
+    public function dayAvailability(string $id, Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'date' => 'required|date',
+        ]);
+
+        return $this->success($this->roomService->getDayAvailability($id, $validated['date']));
     }
 
     public function availability(string $id, RoomAvailabilityRequest $request): JsonResponse

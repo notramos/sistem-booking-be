@@ -20,15 +20,26 @@ class BookingRepository
      * writes for that room and closes the race. Must be called inside DB::transaction().
      *
      * Postgres-only (production/docker always run Postgres, see docker-compose.yml).
-     * No-op on other drivers (e.g. sqlite in tests) since they lack advisory locks.
+     * No-op on other drivers ONLY in local/testing (e.g. sqlite in tests, which lack
+     * advisory locks) — anywhere else, a non-pgsql driver means the double-booking
+     * race is silently unprotected, so we fail loudly instead of pretending it's safe.
      */
     public function lockRoom(string $roomId): void
     {
-        if (DB::connection()->getDriverName() !== 'pgsql') {
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'pgsql') {
+            DB::statement('SELECT pg_advisory_xact_lock(hashtext(?))', [$roomId]);
+
             return;
         }
 
-        DB::statement('SELECT pg_advisory_xact_lock(hashtext(?))', [$roomId]);
+        if (! app()->environment('local', 'testing')) {
+            throw new \RuntimeException(
+                "Booking advisory lock membutuhkan driver 'pgsql' untuk mencegah race condition double-booking, ".
+                "tapi koneksi saat ini pakai driver '{$driver}'. Set DB_CONNECTION=pgsql sebelum menjalankan di lingkungan ini."
+            );
+        }
     }
 
     public function findOrFail(string $id): Booking

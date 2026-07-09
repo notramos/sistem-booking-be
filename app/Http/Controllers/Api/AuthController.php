@@ -11,6 +11,7 @@ use App\Http\Response\ApiResponse;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
@@ -35,17 +36,19 @@ class AuthController extends Controller
 
         $user->update(['last_login_at' => now()]);
 
-        $token = $user->createToken('auth-token')->plainTextToken;
+        Auth::login($user);
+        $request->session()->regenerate();
 
         return $this->success([
             'user' => new UserResource($user->load('roles')),
-            'token' => $token,
         ], 'Login berhasil');
     }
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return $this->success(null, 'Logout berhasil');
     }
