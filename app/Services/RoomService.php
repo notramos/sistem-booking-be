@@ -75,11 +75,21 @@ class RoomService
     }
 
     /**
+     * Kelipatan kapasitas maksimum dari jumlah peserta yang masih dianggap "pas" untuk
+     * direkomendasikan — ruangan yang jauh lebih besar (mis. 500 orang untuk acara 5
+     * orang) disembunyikan dari rekomendasi, KECUALI tidak ada pilihan lain yang cukup.
+     */
+    private const RECOMMENDATION_CAPACITY_MULTIPLIER = 2;
+
+    /**
      * Rekomendasi ruangan untuk suatu tanggal berdasarkan jumlah peserta.
      * Ruangan yang kapasitasnya cukup diambil (best-fit terkecil dulu), lalu
      * ketersediaan hari itu dihitung dengan SATU query booking bulk (anti N+1).
      * Urutan akhir: yang masih punya slot bebas didahulukan, lalu kapasitas
      * terkecil — sehingga "ruangan paling pas yang masih tersedia" di paling atas.
+     * Ruangan yang kapasitasnya jauh melebihi kebutuhan (> RECOMMENDATION_CAPACITY_MULTIPLIER
+     * kali peserta) disaring dari hasil akhir, kecuali itu satu-satunya pilihan yang tersisa —
+     * jadi list tidak dipenuhi ruangan besar yang tidak relevan untuk acara kecil.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -89,7 +99,7 @@ class RoomService
         $bookedByRoom = $this->roomRepo->getDayBookedSlotsForRooms($rooms->pluck('id')->all(), $date);
         $hours = config('booking.operating_hours');
 
-        return $rooms
+        $sorted = $rooms
             ->map(function (Room $room) use ($bookedByRoom, $hours) {
                 $booked = $bookedByRoom->get($room->id) ?? collect();
                 $freeSlots = $this->computeFreeSlots($booked, $hours['open'], $hours['close']);
@@ -107,7 +117,13 @@ class RoomService
             })
             ->sort(fn ($a, $b) => [$a['has_free_slot'] ? 0 : 1, $a['capacity']]
                 <=> [$b['has_free_slot'] ? 0 : 1, $b['capacity']])
-            ->values()
+            ->values();
+
+        $maxReasonableCapacity = $attendees * self::RECOMMENDATION_CAPACITY_MULTIPLIER;
+        $reasonable = $sorted->filter(fn (array $item) => $item['capacity'] <= $maxReasonableCapacity);
+        $final = $reasonable->isNotEmpty() ? $reasonable : $sorted;
+
+        return $final
             ->map(fn (array $item) => [
                 'room' => new RoomResource($item['room']),
                 'fits' => $item['fits'],
@@ -116,6 +132,7 @@ class RoomService
                 'booked_slots' => $item['booked_slots'],
                 'free_slots' => $item['free_slots'],
             ])
+            ->values()
             ->all();
     }
 

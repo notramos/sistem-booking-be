@@ -16,13 +16,12 @@ class StoreBookingRequest extends FormRequest
     public function rules(): array
     {
         $minDate = now()->addDays(config('booking.min_advance_days'))->toDateString();
-        $maxDate = now()->addDays(config('booking.max_advance_days'))->toDateString();
 
         return [
             'room_id' => 'required|exists:rooms,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'booking_date' => "required|date|after_or_equal:{$minDate}|before_or_equal:{$maxDate}",
+            'booking_date' => "required|date|after_or_equal:{$minDate}",
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'purpose_type' => 'nullable|in:ibadah,acara_keluarga,latihan_musik,pembinaan,rapat,seminar,publik',
@@ -34,11 +33,9 @@ class StoreBookingRequest extends FormRequest
     public function messages(): array
     {
         $minDate = now()->locale('id')->addDays(config('booking.min_advance_days'))->translatedFormat('d F Y');
-        $maxDate = now()->locale('id')->addDays(config('booking.max_advance_days'))->translatedFormat('d F Y');
 
         return [
             'booking_date.after_or_equal' => "Booking harus diajukan minimal {$minDate} (H+".config('booking.min_advance_days').' dari hari ini).',
-            'booking_date.before_or_equal' => "Tanggal booking maksimal {$maxDate} (H+".config('booking.max_advance_days').' dari hari ini).',
         ];
     }
 

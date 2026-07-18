@@ -49,9 +49,8 @@ class BookingService
             }
 
             $minDate = now()->addDays(config('booking.min_advance_days'))->toDateString();
-            $maxDate = now()->addDays(config('booking.max_advance_days'))->toDateString();
-            if ($dto->bookingDate < $minDate || $dto->bookingDate > $maxDate) {
-                throw new RoomNotAvailableException('Tanggal booking di luar rentang yang diizinkan (H+'.config('booking.min_advance_days').' s/d H+'.config('booking.max_advance_days').' dari hari ini)');
+            if ($dto->bookingDate < $minDate) {
+                throw new RoomNotAvailableException('Tanggal booking minimal H+'.config('booking.min_advance_days').' dari hari ini');
             }
 
             $blockReason = $this->isSlotBlocked($dto->roomId, $dto->bookingDate, $dto->startTime, $dto->endTime, lockForUpdate: true);
@@ -152,8 +151,8 @@ class BookingService
      * pengaman race-condition — kalau ternyata ada yang berubah jadi bentrok di antara waktu
      * preview & submit, tanggal itu dilewati (bukan menggagalkan seluruh pengajuan).
      *
-     * H+30 (max_advance_days) SENGAJA tidak dicek di sini — aturan itu cuma relevan untuk
-     * booking sekali; H+7 (min_advance_days) tetap wajib untuk tanggal paling awal saja.
+     * Tidak ada batas atas tanggal — H+7 (min_advance_days) tetap wajib untuk tanggal
+     * paling awal saja.
      */
     public function createRecurring(RecurringBookingDTO $dto): RecurringBookingResult
     {

@@ -43,6 +43,8 @@ class BookingController extends Controller
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->when($request->room_id, fn ($q, $r) => $q->where('room_id', $r))
             ->when($request->date, fn ($q, $d) => $q->where('booking_date', $d))
+            ->when($request->date_from, fn ($q, $d) => $q->where('booking_date', '>=', $d))
+            ->when($request->date_to, fn ($q, $d) => $q->where('booking_date', '<=', $d))
             ->orderBy('created_at', 'desc')
             ->paginate(Pagination::perPage($request->per_page, 15));
 
