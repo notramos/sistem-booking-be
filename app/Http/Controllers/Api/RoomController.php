@@ -99,6 +99,7 @@ class RoomController extends Controller
             date: $validated['date'],
             startTime: $validated['start_time'],
             endTime: $validated['end_time'],
+            excludeBookingId: $validated['exclude_booking_id'] ?? null,
         );
 
         return $this->success([

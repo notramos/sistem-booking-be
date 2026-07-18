@@ -12,6 +12,7 @@ class BookingApprovalResource extends JsonResource
         return [
             'id' => $this->id,
             'booking_id' => $this->booking_id,
+            'stage' => $this->stage,
             'approver_id' => $this->approver_id,
             'action' => $this->action,
             'notes' => $this->notes,

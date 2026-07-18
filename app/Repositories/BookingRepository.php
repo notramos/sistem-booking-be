@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Enums\BookingStatus;
 use App\Models\Booking;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -44,7 +45,7 @@ class BookingRepository
 
     public function findOrFail(string $id): Booking
     {
-        return Booking::with(['user', 'room', 'approval', 'logs.user'])->findOrFail($id);
+        return Booking::with(['user', 'room', 'approvals', 'logs.user'])->findOrFail($id);
     }
 
     public function create(array $data): Booking
@@ -52,6 +53,11 @@ class BookingRepository
         return Booking::create($data);
     }
 
+    /**
+     * Booking rutin cuma 1 baris tapi bisa mewakili banyak tanggal (recurring_dates JSON),
+     * jadi $date dianggap bentrok kalau cocok dengan booking_date (booking biasa/tanggal
+     * pertama rutin) ATAU muncul di dalam recurring_dates milik booking lain.
+     */
     public function hasConflict(
         string $roomId,
         string $date,
@@ -61,13 +67,14 @@ class BookingRepository
         bool $lockForUpdate = false
     ): bool {
         $query = Booking::where('room_id', $roomId)
-            ->where('booking_date', $date)
             ->whereIn('status', [BookingStatus::PENDING->value, BookingStatus::APPROVED->value])
+            ->where(function ($q) use ($date) {
+                $q->where('booking_date', $date)
+                    ->orWhereJsonContains('recurring_dates', $date);
+            })
             ->where(function ($q) use ($startTime, $endTime) {
-                $q->where(function ($q) use ($startTime, $endTime) {
-                    $q->where('start_time', '<', $endTime)
-                        ->where('end_time', '>', $startTime);
-                });
+                $q->where('start_time', '<', $endTime)
+                    ->where('end_time', '>', $startTime);
             });
 
         if ($excludeBookingId) {
@@ -83,7 +90,7 @@ class BookingRepository
 
     public function getUserBookings(string $userId, ?string $status = null, int $page = 1, ?string $search = null, int $perPage = 10): LengthAwarePaginator
     {
-        $query = Booking::with(['room:id,name,slug', 'approval'])
+        $query = Booking::with(['room:id,name,slug', 'approvals'])
             ->where('user_id', $userId)
             ->orderBy('created_at', 'desc');
 
@@ -98,28 +105,60 @@ class BookingRepository
         return $query->paginate($perPage, ['*'], 'page', $page);
     }
 
+    /**
+     * Booking rutin (1 baris, banyak tanggal di recurring_dates) di-expand jadi 1 event
+     * kalender per tanggal. Filter rentang untuk rutin dilakukan di PHP (bukan di query)
+     * karena recurring_dates cuma JSON array, bukan kolom yang bisa di-BETWEEN.
+     */
     public function getCalendarData(string $start, string $end, ?string $roomId = null): Collection
     {
-        $query = Booking::with(['room:id,name,slug', 'user:id,name'])
-            ->whereBetween('booking_date', [$start, $end])
-            ->whereIn('status', [
-                BookingStatus::PENDING->value,
-                BookingStatus::APPROVED->value,
-                BookingStatus::COMPLETED->value,
-            ]);
+        $statuses = [
+            BookingStatus::PENDING->value,
+            BookingStatus::APPROVED->value,
+            BookingStatus::COMPLETED->value,
+        ];
 
-        if ($roomId) {
-            $query->where('room_id', $roomId);
+        $reguler = Booking::with(['room:id,name,slug', 'user:id,name'])
+            ->where('booking_type', 'reguler')
+            ->whereBetween('booking_date', [$start, $end])
+            ->whereIn('status', $statuses)
+            ->when($roomId, fn ($q) => $q->where('room_id', $roomId))
+            ->get();
+
+        $rutin = Booking::with(['room:id,name,slug', 'user:id,name'])
+            ->where('booking_type', 'rutin')
+            ->whereIn('status', $statuses)
+            ->when($roomId, fn ($q) => $q->where('room_id', $roomId))
+            ->get();
+
+        $events = collect();
+
+        foreach ($reguler as $booking) {
+            $events->push($this->toCalendarEvent($booking, $booking->booking_date->format('Y-m-d')));
         }
 
-        return $query->get()->map(fn ($booking) => [
-            'id' => $booking->id,
+        foreach ($rutin as $booking) {
+            foreach (($booking->recurring_dates ?? []) as $date) {
+                if ($date >= $start && $date <= $end) {
+                    $events->push($this->toCalendarEvent($booking, $date));
+                }
+            }
+        }
+
+        return $events;
+    }
+
+    private function toCalendarEvent(Booking $booking, string $date): array
+    {
+        return [
+            'id' => "{$booking->id}::{$date}",
+            'booking_id' => $booking->id,
             'title' => $booking->title,
             'room' => $booking->room->name,
             'room_id' => $booking->room_id,
             'user' => $booking->user->name,
-            'start' => $booking->booking_date.'T'.$booking->start_time,
-            'end' => $booking->booking_date.'T'.$booking->end_time,
+            'start' => $date.'T'.$booking->start_time,
+            'end' => $date.'T'.$booking->end_time,
             'start_time' => $booking->start_time,
             'end_time' => $booking->end_time,
             'status' => $booking->status,
@@ -141,15 +180,31 @@ class BookingRepository
                 'type' => 'booking',
                 'status_label' => BookingStatus::tryFrom($booking->status)?->label() ?? $booking->status,
                 'description' => $booking->description,
+                'is_recurring' => $booking->booking_type === 'rutin',
             ],
-        ]);
+        ];
     }
 
-    public function getPendingBookings(): LengthAwarePaginator
+    /**
+     * Admin melihat semua booking yang masih bisa diaksi (termasuk yang masih di
+     * tahap sekretariat, karena admin bisa override/skip), sekretariat hanya melihat
+     * antrean tahap pertama.
+     */
+    public function getPendingBookings(User $user): LengthAwarePaginator
     {
-        return Booking::with(['user:id,name,department', 'room:id,name,slug'])
-            ->where('status', BookingStatus::PENDING->value)
-            ->orderBy('created_at', 'asc')
-            ->paginate(15);
+        $query = Booking::with(['user:id,name,department', 'room:id,name,slug'])
+            ->orderBy('created_at', 'asc');
+
+        if ($user->hasRole('admin')) {
+            $query->whereIn('status', [
+                BookingStatus::PENDING->value,
+                BookingStatus::SEKRETARIAT_REVIEW->value,
+                BookingStatus::ADMIN_REVIEW->value,
+            ]);
+        } else {
+            $query->pendingSekretariat();
+        }
+
+        return $query->paginate(15);
     }
 }

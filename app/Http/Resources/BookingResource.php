@@ -15,13 +15,20 @@ class BookingResource extends JsonResource
             'room_id' => $this->room_id,
             'title' => $this->title,
             'description' => $this->description,
-            'booking_date' => $this->booking_date,
+            // $this->booking_date adalah instance Carbon (cast 'date:Y-m-d'); JSON-encode
+            // default Carbon mengonversi ke UTC lalu ISO-8601 penuh, yang bisa menggeser
+            // tanggal kalender kalau APP_TIMEZONE bukan UTC (di sini Asia/Jakarta) — format
+            // eksplisit di sini supaya konsumen selalu terima tanggal polos "Y-m-d".
+            'booking_date' => $this->booking_date->format('Y-m-d'),
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
             'purpose_type' => $this->purpose_type,
             'expected_attendees' => $this->expected_attendees,
             'contact_person' => $this->contact_person,
             'status' => $this->status,
+            'booking_type' => $this->booking_type,
+            'recurring_pattern' => $this->recurring_pattern,
+            'recurring_dates' => $this->recurring_dates,
             'notes' => $this->notes,
             'service_details' => $this->service_details,
             'reject_reason' => $this->reject_reason,
@@ -35,7 +42,7 @@ class BookingResource extends JsonResource
             'signed_petugas_by' => $this->whenLoaded('signedBy', fn () => $this->signedBy?->name),
             'user' => new UserResource($this->whenLoaded('user')),
             'room' => new RoomResource($this->whenLoaded('room')),
-            'approval' => new BookingApprovalResource($this->whenLoaded('approval')),
+            'approvals' => BookingApprovalResource::collection($this->whenLoaded('approvals')),
             'logs' => BookingLogResource::collection($this->whenLoaded('logs')),
             'created_at' => $this->created_at,
         ];

@@ -10,7 +10,7 @@ class BookingApproval extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['booking_id', 'approver_id', 'action', 'notes'];
+    protected $fillable = ['booking_id', 'stage', 'approver_id', 'action', 'notes'];
 
     public function booking(): BelongsTo
     {

@@ -6,6 +6,7 @@ use App\Enums\BookingStatus;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
@@ -26,6 +27,9 @@ class User extends Authenticatable
         'nip',
         'is_active',
         'last_login_at',
+        'wilayah_id',
+        'lingkungan_id',
+        'parish',
     ];
 
     protected $hidden = [
@@ -46,6 +50,16 @@ class User extends Authenticatable
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function wilayah(): BelongsTo
+    {
+        return $this->belongsTo(Wilayah::class);
+    }
+
+    public function lingkungan(): BelongsTo
+    {
+        return $this->belongsTo(Lingkungan::class);
     }
 
     public function activeBookings(): HasMany

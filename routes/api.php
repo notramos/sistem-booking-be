@@ -26,6 +26,13 @@ use Illuminate\Support\Facades\Route;
 Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
 Route::post('auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
+Route::post('auth/register/start', [AuthController::class, 'registerStart'])->middleware('throttle:5,1');
+Route::post('auth/register/verify', [AuthController::class, 'registerVerify'])->middleware('throttle:10,1');
+Route::post('auth/register/complete', [AuthController::class, 'registerComplete'])->middleware('throttle:5,1');
+
+// Wilayah & Lingkungan (master data untuk form Pelayanan Umat & form registrasi —
+// perlu diakses SEBELUM login saat mengisi profil registrasi, datanya tidak sensitif).
+Route::get('wilayah', [WilayahController::class, 'index']);
 
 // Authenticated routes
 Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
@@ -59,14 +66,18 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::get('bookings/pending', [BookingController::class, 'pending'])->middleware('can:bookings.approve');
     Route::get('bookings/calendar', [BookingController::class, 'calendar']);
     Route::post('bookings', [BookingController::class, 'store']);
+    Route::post('bookings/recurring/preview', [BookingController::class, 'previewRecurring']);
+    Route::post('bookings/recurring', [BookingController::class, 'storeRecurring']);
     Route::get('bookings/{booking}', [BookingController::class, 'show']);
     Route::put('bookings/{booking}', [BookingController::class, 'update']);
     Route::delete('bookings/{booking}', [BookingController::class, 'destroy']);
     Route::post('bookings/{booking}/signature', [BookingController::class, 'sign']);
 
     // Approvals (sekretariat/admin)
+    Route::post('bookings/{booking}/start-review', [ApprovalController::class, 'startReview'])->middleware('can:bookings.approve');
     Route::post('bookings/{booking}/approve', [ApprovalController::class, 'approve'])->middleware('can:bookings.approve');
     Route::post('bookings/{booking}/reject', [ApprovalController::class, 'reject'])->middleware('can:bookings.reject');
+    Route::post('bookings/{booking}/revise', [ApprovalController::class, 'revise'])->middleware('can:bookings.approve');
 
     // Congregation Services
     Route::get('congregation-services', [CongregationServiceController::class, 'index']);
@@ -74,9 +85,6 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::post('congregation-services', [CongregationServiceController::class, 'store']);
     Route::post('congregation-services/{id}/approve', [CongregationServiceController::class, 'approve'])->middleware('can:bookings.approve');
     Route::post('congregation-services/{id}/reject', [CongregationServiceController::class, 'reject'])->middleware('can:bookings.reject');
-
-    // Wilayah & Lingkungan (master data untuk form Pelayanan Umat)
-    Route::get('wilayah', [WilayahController::class, 'index']);
 
     // Notifications
     Route::get('notifications', [NotificationController::class, 'index']);

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\BookingStatus;
 use App\Models\Booking;
 use App\Models\BookingApproval;
+use App\Models\User;
 use App\Repositories\BookingRepository;
 use App\Repositories\RoomRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -15,56 +16,96 @@ class ApprovalService
     public function __construct(
         private BookingRepository $bookingRepo,
         private RoomRepository $roomRepo,
+        private BookingService $bookingService,
         private NotificationService $notificationService,
         private AuditService $auditService,
     ) {}
 
-    public function approve(string $bookingId, string $approverId, ?string $notes = null): Booking
+    public function startReview(string $bookingId): Booking
     {
-        return DB::transaction(function () use ($bookingId, $approverId, $notes) {
+        return DB::transaction(function () use ($bookingId) {
             $booking = $this->bookingRepo->findOrFail($bookingId);
 
             if ($booking->status !== BookingStatus::PENDING->value) {
-                throw new \InvalidArgumentException('Booking sudah tidak dalam status pending');
+                throw new \InvalidArgumentException('Booking sudah tidak dalam status menunggu review');
             }
 
-            $booking->update(['status' => BookingStatus::APPROVED->value]);
+            $booking->update(['status' => BookingStatus::SEKRETARIAT_REVIEW->value]);
 
-            $this->roomRepo->clearAvailabilityCache();
-
-            BookingApproval::create([
-                'booking_id' => $booking->id,
-                'approver_id' => $approverId,
-                'action' => 'approved',
-                'notes' => $notes,
-            ]);
-
-            $this->auditService->log('booking.approved', $booking);
-            $this->notificationService->bookingApproved($booking);
+            $this->auditService->log('booking.review_started', $booking);
 
             return $booking;
         });
     }
 
-    public function reject(string $bookingId, string $approverId, string $reason): Booking
+    /**
+     * Approve dari Sekretariat meneruskan booking ke tahap Admin (belum final).
+     * Approve dari Admin selalu final — berlaku juga sebagai override, bisa
+     * langsung dari PENDING/SEKRETARIAT_REVIEW (skip tahap sekretariat).
+     */
+    public function approve(string $bookingId, User $approver, ?string $notes = null): Booking
     {
-        return DB::transaction(function () use ($bookingId, $approverId, $reason) {
+        return DB::transaction(function () use ($bookingId, $approver, $notes) {
             $booking = $this->bookingRepo->findOrFail($bookingId);
+            $isAdmin = $approver->hasRole('admin');
 
-            if ($booking->status !== BookingStatus::PENDING->value) {
-                throw new \InvalidArgumentException('Booking sudah tidak dalam status pending');
+            if (! $isAdmin && ! in_array($booking->status, [BookingStatus::PENDING->value, BookingStatus::SEKRETARIAT_REVIEW->value])) {
+                throw new \InvalidArgumentException('Booking sudah melewati tahap sekretariat');
             }
 
-            $booking->update(['status' => BookingStatus::REJECTED->value]);
+            if ($isAdmin && ! in_array($booking->status, BookingStatus::nonFinal())) {
+                throw new \InvalidArgumentException('Booking sudah tidak dalam status yang bisa disetujui');
+            }
+
+            $stage = $isAdmin ? 'admin' : 'sekretariat';
+            $newStatus = $isAdmin ? BookingStatus::APPROVED->value : BookingStatus::ADMIN_REVIEW->value;
+
+            $booking->update(['status' => $newStatus]);
+
+            BookingApproval::updateOrCreate(
+                ['booking_id' => $booking->id, 'stage' => $stage],
+                ['approver_id' => $approver->id, 'action' => 'approved', 'notes' => $notes]
+            );
+
+            $this->auditService->log('booking.approved', $booking);
+
+            if ($isAdmin) {
+                $this->roomRepo->clearAvailabilityCache();
+                $this->notificationService->bookingApproved($booking);
+            } else {
+                $this->notificationService->bookingMovedToAdminReview($booking);
+            }
+
+            return $booking;
+        });
+    }
+
+    /**
+     * Reject bisa dilakukan sekretariat maupun admin, dari status apa pun yang
+     * belum final (admin juga bisa override/reject langsung dari tahap sekretariat).
+     */
+    public function reject(string $bookingId, User $approver, string $reason): Booking
+    {
+        return DB::transaction(function () use ($bookingId, $approver, $reason) {
+            $booking = $this->bookingRepo->findOrFail($bookingId);
+
+            if (! in_array($booking->status, BookingStatus::nonFinal())) {
+                throw new \InvalidArgumentException('Booking sudah tidak dalam status yang bisa ditolak');
+            }
+
+            $stage = $approver->hasRole('admin') ? 'admin' : 'sekretariat';
+
+            $booking->update([
+                'status' => BookingStatus::REJECTED->value,
+                'reject_reason' => $reason,
+            ]);
 
             $this->roomRepo->clearAvailabilityCache();
 
-            BookingApproval::create([
-                'booking_id' => $booking->id,
-                'approver_id' => $approverId,
-                'action' => 'rejected',
-                'notes' => $reason,
-            ]);
+            BookingApproval::updateOrCreate(
+                ['booking_id' => $booking->id, 'stage' => $stage],
+                ['approver_id' => $approver->id, 'action' => 'rejected', 'notes' => $reason]
+            );
 
             $this->auditService->log('booking.rejected', $booking);
             $this->notificationService->bookingRejected($booking);
@@ -73,8 +114,66 @@ class ApprovalService
         });
     }
 
-    public function getPendingBookings(): LengthAwarePaginator
+    /**
+     * Kirim booking kembali ke pemohon untuk diperbaiki. Status revisi menyimpan
+     * tahap mana yang memintanya, supaya resubmit tahu harus kembali ke mana.
+     */
+    public function requestRevision(string $bookingId, User $approver, string $reason): Booking
     {
-        return $this->bookingRepo->getPendingBookings();
+        return DB::transaction(function () use ($bookingId, $approver, $reason) {
+            $booking = $this->bookingRepo->findOrFail($bookingId);
+            $isAdmin = $approver->hasRole('admin');
+
+            if (! $isAdmin && ! in_array($booking->status, [BookingStatus::PENDING->value, BookingStatus::SEKRETARIAT_REVIEW->value])) {
+                throw new \InvalidArgumentException('Booking sudah melewati tahap sekretariat');
+            }
+
+            if (! in_array($booking->status, BookingStatus::nonFinal())) {
+                throw new \InvalidArgumentException('Booking sudah tidak dalam status yang bisa direvisi');
+            }
+
+            $stage = $isAdmin ? 'admin' : 'sekretariat';
+            $newStatus = $isAdmin ? BookingStatus::REVISION_ADMIN->value : BookingStatus::REVISION_SEKRETARIAT->value;
+
+            $booking->update(['status' => $newStatus]);
+
+            BookingApproval::updateOrCreate(
+                ['booking_id' => $booking->id, 'stage' => $stage],
+                ['approver_id' => $approver->id, 'action' => 'revision', 'notes' => $reason]
+            );
+
+            $this->auditService->log('booking.revision_requested', $booking);
+            $this->notificationService->bookingRevisionRequested($booking, $reason);
+
+            return $booking;
+        });
+    }
+
+    /**
+     * Pemohon mengedit & mengajukan ulang booking yang diminta revisi — kembali
+     * ke tahap yang sama yang memintanya (bukan selalu ke awal).
+     */
+    public function resubmit(string $bookingId, User $owner, array $data): Booking
+    {
+        $booking = $this->bookingRepo->findOrFail($bookingId);
+
+        if ($booking->user_id !== $owner->id) {
+            throw new \InvalidArgumentException('Anda tidak berhak mengubah booking ini');
+        }
+
+        if (! in_array($booking->status, [BookingStatus::REVISION_SEKRETARIAT->value, BookingStatus::REVISION_ADMIN->value])) {
+            throw new \InvalidArgumentException('Booking tidak dalam status revisi');
+        }
+
+        $backTo = $booking->status === BookingStatus::REVISION_SEKRETARIAT->value
+            ? BookingStatus::SEKRETARIAT_REVIEW->value
+            : BookingStatus::ADMIN_REVIEW->value;
+
+        return $this->bookingService->updateTime($bookingId, [...$data, 'status' => $backTo]);
+    }
+
+    public function getPendingBookings(User $user): LengthAwarePaginator
+    {
+        return $this->bookingRepo->getPendingBookings($user);
     }
 }

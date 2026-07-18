@@ -6,7 +6,11 @@ use App\DTOs\BookingDTO;
 use App\DTOs\CalendarFilterDTO;
 use App\Enums\BookingStatus;
 use App\Http\Controllers\Controller;
+use App\DTOs\RecurringBookingDTO;
+use App\DTOs\RecurringPreviewDTO;
+use App\Http\Requests\Api\PreviewRecurringBookingRequest;
 use App\Http\Requests\Api\StoreBookingRequest;
+use App\Http\Requests\Api\StoreRecurringBookingRequest;
 use App\Http\Requests\Api\UpdateBookingRequest;
 use App\Http\Resources\BookingResource;
 use App\Http\Response\ApiResponse;
@@ -26,6 +30,7 @@ class BookingController extends Controller
     public function __construct(
         private BookingService $bookingService,
         private CalendarService $calendarService,
+        private ApprovalService $approvalService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -68,11 +73,53 @@ class BookingController extends Controller
         );
     }
 
+    public function previewRecurring(PreviewRecurringBookingRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $dto = new RecurringPreviewDTO(
+            roomId: $validated['room_id'],
+            firstDate: $validated['first_date'],
+            startTime: $validated['start_time'],
+            endTime: $validated['end_time'],
+            pattern: $validated['pattern'],
+            durationMonths: $validated['duration_months'],
+        );
+
+        return $this->success(['dates' => $this->bookingService->previewRecurring($dto)]);
+    }
+
+    public function storeRecurring(StoreRecurringBookingRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $dto = new RecurringBookingDTO(
+            roomId: $validated['room_id'],
+            title: $validated['title'],
+            dates: $validated['dates'],
+            startTime: $validated['start_time'],
+            endTime: $validated['end_time'],
+            pattern: $validated['pattern'],
+            description: $validated['description'] ?? null,
+            purposeType: $validated['purpose_type'] ?? null,
+            expectedAttendees: $validated['expected_attendees'] ?? null,
+            notes: $validated['notes'] ?? null,
+        );
+
+        $result = $this->bookingService->createRecurring($dto);
+
+        return $this->created([
+            'booking' => new BookingResource($result->booking->load(['room:id,name,slug', 'user:id,name'])),
+            'skipped' => $result->skipped,
+            'skipped_count' => count($result->skipped),
+        ], 'Jadwal rutin berhasil diajukan');
+    }
+
     public function show(string $id): JsonResponse
     {
         $booking = Booking::with([
             'user', 'room.category', 'room.facilities', 'room.images',
-            'approval.approver:id,name', 'logs.user:id,name', 'signedBy:id,name',
+            'approvals.approver:id,name', 'logs.user:id,name', 'signedBy:id,name',
         ])->findOrFail($id);
 
         $this->authorize('view', $booking);
@@ -85,11 +132,31 @@ class BookingController extends Controller
         $booking = Booking::findOrFail($id);
         $this->authorize('update', $booking);
 
-        if (! $booking->isPending()) {
+        $user = $request->user();
+        $isOwner = $user->id === $booking->user_id;
+        $isResubmit = $isOwner && in_array($booking->status, [
+            BookingStatus::REVISION_SEKRETARIAT->value,
+            BookingStatus::REVISION_ADMIN->value,
+        ]);
+
+        if ($isResubmit) {
+            $booking = $this->approvalService->resubmit($id, $user, $request->validated());
+
+            return $this->success(new BookingResource($booking), 'Booking berhasil diperbarui dan diajukan ulang');
+        }
+
+        $isStaffRealloc = $user->hasRole('sekretariat') && $booking->status === BookingStatus::SEKRETARIAT_REVIEW->value;
+
+        if (! $isStaffRealloc && ! $booking->isPending()) {
             return $this->error('Booking tidak dapat diubah karena sudah diproses', 422);
         }
 
-        $booking = $this->bookingService->updateTime($id, $request->validated());
+        $validated = $request->validated();
+        if (! $isStaffRealloc && (isset($validated['room_id']) || isset($validated['booking_date']))) {
+            return $this->error('Anda tidak berhak mengubah ruangan/tanggal booking ini', 422);
+        }
+
+        $booking = $this->bookingService->updateTime($id, $validated);
 
         return $this->success(new BookingResource($booking), 'Booking berhasil diperbarui');
     }
@@ -187,9 +254,9 @@ class BookingController extends Controller
         return $this->success($events);
     }
 
-    public function pending(): JsonResponse
+    public function pending(Request $request): JsonResponse
     {
-        $bookings = app(ApprovalService::class)->getPendingBookings();
+        $bookings = $this->approvalService->getPendingBookings($request->user());
 
         return $this->paginated(BookingResource::collection($bookings));
     }

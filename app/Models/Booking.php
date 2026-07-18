@@ -20,6 +20,7 @@ class Booking extends Model
         'cancelled_at', 'completed_at',
         'signature_pemohon', 'signature_pemohon_at',
         'signature_petugas', 'signature_petugas_at', 'signed_petugas_by',
+        'booking_type', 'recurring_pattern', 'recurring_dates',
     ];
 
     protected $appends = ['is_cancellable'];
@@ -32,6 +33,7 @@ class Booking extends Model
             'end_time' => 'string',
             'expected_attendees' => 'integer',
             'service_details' => 'array',
+            'recurring_dates' => 'array',
             'cancelled_at' => 'datetime',
             'completed_at' => 'datetime',
             'signature_pemohon_at' => 'datetime',
@@ -49,9 +51,19 @@ class Booking extends Model
         return $this->belongsTo(Room::class);
     }
 
-    public function approval(): HasOne
+    public function approvals(): HasMany
     {
-        return $this->hasOne(BookingApproval::class);
+        return $this->hasMany(BookingApproval::class);
+    }
+
+    public function sekretariatApproval(): HasOne
+    {
+        return $this->hasOne(BookingApproval::class)->where('stage', 'sekretariat')->latestOfMany();
+    }
+
+    public function adminApproval(): HasOne
+    {
+        return $this->hasOne(BookingApproval::class)->where('stage', 'admin')->latestOfMany();
     }
 
     public function logs(): HasMany
@@ -77,7 +89,7 @@ class Booking extends Model
     public function isCancellable(): bool
     {
         return in_array($this->status, [
-            BookingStatus::PENDING->value,
+            ...BookingStatus::nonFinal(),
             BookingStatus::APPROVED->value,
         ]);
     }
@@ -98,6 +110,19 @@ class Booking extends Model
             BookingStatus::PENDING->value,
             BookingStatus::APPROVED->value,
         ]);
+    }
+
+    public function scopePendingSekretariat($query)
+    {
+        return $query->whereIn('status', [
+            BookingStatus::PENDING->value,
+            BookingStatus::SEKRETARIAT_REVIEW->value,
+        ]);
+    }
+
+    public function scopePendingAdmin($query)
+    {
+        return $query->where('status', BookingStatus::ADMIN_REVIEW->value);
     }
 
     public function scopeForDateRange($query, $startDate, $endDate)

@@ -17,6 +17,8 @@ class UpdateBookingRequest extends FormRequest
         return [
             'title' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
+            'room_id' => 'sometimes|exists:rooms,id',
+            'booking_date' => 'sometimes|date',
             'start_time' => 'sometimes|date_format:H:i',
             'end_time' => 'sometimes|date_format:H:i|after:start_time',
             'notes' => 'nullable|string',
