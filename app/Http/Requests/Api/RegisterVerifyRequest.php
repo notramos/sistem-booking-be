@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
+use App\Services\WhatsAppOtpService;
 use Illuminate\Foundation\Http\FormRequest;
 
 class RegisterVerifyRequest extends FormRequest
@@ -11,10 +12,19 @@ class RegisterVerifyRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('phone')) {
+            $this->merge([
+                'phone' => app(WhatsAppOtpService::class)->normalizePhone($this->phone),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
-            'email' => 'required|email',
+            'phone' => 'required|string',
             'code' => 'required|digits:6',
         ];
     }
@@ -22,7 +32,7 @@ class RegisterVerifyRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'email' => 'email',
+            'phone' => 'nomor WhatsApp',
             'code' => 'kode verifikasi',
         ];
     }

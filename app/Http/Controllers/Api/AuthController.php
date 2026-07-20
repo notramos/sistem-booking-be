@@ -13,12 +13,11 @@ use App\Http\Resources\UserResource;
 use App\Http\Response\ApiResponse;
 use App\Models\RegistrationVerification;
 use App\Models\User;
-use App\Notifications\RegistrationVerificationCode;
+use App\Services\WhatsAppOtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -26,6 +25,8 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     use ApiResponse;
+
+    public function __construct(private WhatsAppOtpService $whatsAppOtp) {}
 
     public function login(LoginRequest $request): JsonResponse
     {
@@ -90,17 +91,17 @@ class AuthController extends Controller
     }
 
     /**
-     * Registrasi mandiri jemaat, tahap 1: kirim kode OTP 6 digit ke email.
+     * Registrasi mandiri jemaat, tahap 1: kirim kode OTP 6 digit ke nomor WhatsApp.
      * Belum membuat baris User apa pun — cuma menyimpan hash kode di
      * registration_verifications sampai pemohon selesai verifikasi + isi profil.
      */
     public function registerStart(RegisterStartRequest $request): JsonResponse
     {
-        $email = $request->email;
+        $phone = $request->phone;
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         RegistrationVerification::updateOrCreate(
-            ['email' => $email],
+            ['phone' => $phone],
             [
                 'code_hash' => Hash::make($code),
                 'attempts' => 0,
@@ -110,19 +111,19 @@ class AuthController extends Controller
             ]
         );
 
-        Notification::route('mail', $email)->notify(new RegistrationVerificationCode($code));
+        $this->whatsAppOtp->send($phone, $code);
 
-        return $this->success(null, 'Kode verifikasi telah dikirim ke email Anda');
+        return $this->success(null, 'Kode verifikasi telah dikirim ke WhatsApp Anda');
     }
 
     /**
      * Registrasi mandiri jemaat, tahap 2: cocokkan kode OTP. Kalau benar, terbitkan
      * verification_token acak (dikembalikan ke frontend) sebagai bukti kepemilikan
-     * email untuk tahap 3 — pemohon belum punya password/sesi di titik ini.
+     * nomor untuk tahap 3 — pemohon belum punya password/sesi di titik ini.
      */
     public function registerVerify(RegisterVerifyRequest $request): JsonResponse
     {
-        $verification = RegistrationVerification::where('email', $request->email)->first();
+        $verification = RegistrationVerification::where('phone', $request->phone)->first();
 
         if (! $verification || $verification->expires_at->isPast()) {
             return $this->error('Kode verifikasi tidak valid atau sudah kedaluwarsa', 422);
@@ -144,18 +145,19 @@ class AuthController extends Controller
             'verification_token' => $token,
         ]);
 
-        return $this->success(['verification_token' => $token], 'Email berhasil diverifikasi');
+        return $this->success(['verification_token' => $token], 'Nomor WhatsApp berhasil diverifikasi');
     }
 
     /**
      * Registrasi mandiri jemaat, tahap 3 (final): buat akun User sungguhan, role
      * jemaat, langsung login-kan. verification_token dari tahap 2 wajib cocok &
      * masih berlaku 30 menit sejak verifikasi — mencegah orang lain menyelesaikan
-     * registrasi atas nama email yang bukan miliknya.
+     * registrasi atas nama nomor yang bukan miliknya. Login tetap pakai email+password
+     * (lihat login()) — email di sini cuma dikumpulkan sebagai identitas akun.
      */
     public function registerComplete(RegisterCompleteRequest $request): JsonResponse
     {
-        $verification = RegistrationVerification::where('email', $request->email)
+        $verification = RegistrationVerification::where('phone', $request->phone)
             ->where('verification_token', $request->verification_token)
             ->first();
 
@@ -163,23 +165,24 @@ class AuthController extends Controller
             return $this->error('Sesi verifikasi tidak valid atau sudah kedaluwarsa, silakan ulangi dari awal', 422);
         }
 
-        if (User::where('email', $request->email)->exists()) {
-            return $this->error('Email ini sudah terdaftar', 422);
+        if (User::where('phone', $request->phone)->exists()) {
+            return $this->error('Nomor WhatsApp ini sudah terdaftar', 422);
         }
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'phone' => $request->phone,
             'password' => Hash::make($request->password),
             'wilayah_id' => $request->wilayah_id,
             'lingkungan_id' => $request->lingkungan_id,
             'parish' => $request->parish,
             'is_active' => true,
         ]);
-        // email_verified_at sengaja tidak di $fillable (menghindari mass-assignment dari
+        // phone_verified_at sengaja tidak di $fillable (menghindari mass-assignment dari
         // input mana pun) — di-set eksplisit di sini karena baris ini cuma tercapai setelah
-        // OTP terverifikasi.
-        $user->forceFill(['email_verified_at' => now()])->save();
+        // OTP WhatsApp terverifikasi.
+        $user->forceFill(['phone_verified_at' => now()])->save();
         $user->assignRole('jemaat');
 
         $verification->delete();

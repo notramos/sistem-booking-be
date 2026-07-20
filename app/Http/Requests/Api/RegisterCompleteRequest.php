@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api;
 
 use App\Models\Lingkungan;
+use App\Services\WhatsAppOtpService;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -13,11 +14,21 @@ class RegisterCompleteRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('phone')) {
+            $this->merge([
+                'phone' => app(WhatsAppOtpService::class)->normalizePhone($this->phone),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
-            'email' => 'required|email',
+            'phone' => 'required|string',
             'verification_token' => 'required|string',
+            'email' => 'required|email|max:255|unique:users,email',
             'name' => 'required|string|max:255',
             'password' => 'required|string|min:8|confirmed',
             'wilayah_id' => 'nullable|exists:wilayah,id',
@@ -44,6 +55,7 @@ class RegisterCompleteRequest extends FormRequest
     public function attributes(): array
     {
         return [
+            'phone' => 'nomor WhatsApp',
             'email' => 'email',
             'verification_token' => 'token verifikasi',
             'name' => 'nama',

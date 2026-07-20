@@ -10,7 +10,7 @@ class RegistrationVerification extends Model
     use HasUuids;
 
     protected $fillable = [
-        'email', 'code_hash', 'attempts', 'expires_at', 'verified_at', 'verification_token',
+        'phone', 'code_hash', 'attempts', 'expires_at', 'verified_at', 'verification_token',
     ];
 
     protected function casts(): array
