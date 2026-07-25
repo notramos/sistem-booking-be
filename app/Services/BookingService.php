@@ -281,6 +281,11 @@ class BookingService
             if ($slotChanged) {
                 $this->bookingRepo->lockRoom($roomId);
 
+                $minDate = now()->addDays(config('booking.min_advance_days'))->toDateString();
+                if ($bookingDate < $minDate) {
+                    throw new RoomNotAvailableException('Tanggal booking minimal H+'.config('booking.min_advance_days').' dari hari ini');
+                }
+
                 $isUnderMaintenance = MaintenanceSchedule::forRoom($roomId, $bookingDate)
                     ->where(function ($q) use ($startTime, $endTime) {
                         $q->where('is_all_day', true)
