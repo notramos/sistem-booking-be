@@ -91,7 +91,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Registrasi mandiri jemaat, tahap 1: kirim kode OTP 6 digit ke nomor WhatsApp.
+     * Registrasi mandiri umat, tahap 1: kirim kode OTP 6 digit ke nomor WhatsApp.
      * Belum membuat baris User apa pun — cuma menyimpan hash kode di
      * registration_verifications sampai pemohon selesai verifikasi + isi profil.
      */
@@ -117,7 +117,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Registrasi mandiri jemaat, tahap 2: cocokkan kode OTP. Kalau benar, terbitkan
+     * Registrasi mandiri umat, tahap 2: cocokkan kode OTP. Kalau benar, terbitkan
      * verification_token acak (dikembalikan ke frontend) sebagai bukti kepemilikan
      * nomor untuk tahap 3 — pemohon belum punya password/sesi di titik ini.
      */
@@ -149,8 +149,8 @@ class AuthController extends Controller
     }
 
     /**
-     * Registrasi mandiri jemaat, tahap 3 (final): buat akun User sungguhan, role
-     * jemaat, langsung login-kan. verification_token dari tahap 2 wajib cocok &
+     * Registrasi mandiri umat, tahap 3 (final): buat akun User sungguhan, role
+     * umat, langsung login-kan. verification_token dari tahap 2 wajib cocok &
      * masih berlaku 30 menit sejak verifikasi — mencegah orang lain menyelesaikan
      * registrasi atas nama nomor yang bukan miliknya. Login tetap pakai email+password
      * (lihat login()) — email di sini cuma dikumpulkan sebagai identitas akun.
@@ -183,7 +183,7 @@ class AuthController extends Controller
         // input mana pun) — di-set eksplisit di sini karena baris ini cuma tercapai setelah
         // OTP WhatsApp terverifikasi.
         $user->forceFill(['phone_verified_at' => now()])->save();
-        $user->assignRole('jemaat');
+        $user->assignRole('umat');
 
         $verification->delete();
 

@@ -47,7 +47,7 @@ class ApprovalService
     {
         return DB::transaction(function () use ($bookingId, $approver, $notes) {
             $booking = $this->bookingRepo->findOrFail($bookingId);
-            $isAdmin = $approver->hasRole('admin');
+            $isAdmin = $approver->hasAnyRole(['p2', 'pastor', 'it_admin']);
 
             if (! $isAdmin && ! in_array($booking->status, [BookingStatus::PENDING->value, BookingStatus::SEKRETARIAT_REVIEW->value])) {
                 throw new \InvalidArgumentException('Booking sudah melewati tahap sekretariat');
@@ -93,7 +93,7 @@ class ApprovalService
                 throw new \InvalidArgumentException('Booking sudah tidak dalam status yang bisa ditolak');
             }
 
-            $stage = $approver->hasRole('admin') ? 'admin' : 'sekretariat';
+            $stage = $approver->hasAnyRole(['p2', 'pastor', 'it_admin']) ? 'admin' : 'sekretariat';
 
             $booking->update([
                 'status' => BookingStatus::REJECTED->value,
@@ -122,7 +122,7 @@ class ApprovalService
     {
         return DB::transaction(function () use ($bookingId, $approver, $reason) {
             $booking = $this->bookingRepo->findOrFail($bookingId);
-            $isAdmin = $approver->hasRole('admin');
+            $isAdmin = $approver->hasAnyRole(['p2', 'pastor', 'it_admin']);
 
             if (! $isAdmin && ! in_array($booking->status, [BookingStatus::PENDING->value, BookingStatus::SEKRETARIAT_REVIEW->value])) {
                 throw new \InvalidArgumentException('Booking sudah melewati tahap sekretariat');

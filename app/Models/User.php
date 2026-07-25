@@ -21,7 +21,6 @@ class User extends Authenticatable
         'password',
         'phone',
         'avatar',
-        'signature',
         'department',
         'position',
         'nip',
@@ -74,9 +73,16 @@ class User extends Authenticatable
         return $this->hasMany(BookingApproval::class, 'approver_id');
     }
 
+    // P2, Pastor, dan IT Admin sederajat di tahap approval final (lihat
+    // ApprovalService) — bedanya cuma IT Admin yang bisa kelola user internal.
     public function isAdmin(): bool
     {
-        return $this->hasRole('admin');
+        return $this->hasAnyRole(['p2', 'pastor', 'it_admin']);
+    }
+
+    public function isItAdmin(): bool
+    {
+        return $this->hasRole('it_admin');
     }
 
     public function isSekretariat(): bool

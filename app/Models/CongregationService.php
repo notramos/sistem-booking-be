@@ -17,7 +17,6 @@ class CongregationService extends Model
         'father_name', 'father_religion', 'mother_name', 'mother_religion',
         'school', 'grade', 'occupation', 'family_card_number',
         'service_date', 'description', 'status', 'notes', 'dynamic_fields',
-        'signature_pemohon', 'signature_pemohon_at',
     ];
 
     protected function casts(): array
@@ -26,7 +25,6 @@ class CongregationService extends Model
             'service_date' => 'date:Y-m-d',
             'birth_date' => 'date:Y-m-d',
             'dynamic_fields' => 'array',
-            'signature_pemohon_at' => 'datetime',
         ];
     }
 

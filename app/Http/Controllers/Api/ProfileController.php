@@ -9,7 +9,6 @@ use App\Http\Requests\Api\UploadAvatarRequest;
 use App\Http\Resources\UserResource;
 use App\Http\Response\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
@@ -55,20 +54,5 @@ class ProfileController extends Controller
         $user->update(['avatar' => $path]);
 
         return $this->success(['avatar_url' => asset('storage/'.$path)], 'Avatar berhasil diunggah');
-    }
-
-    public function updateSignature(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'signature' => ['nullable', 'string', 'regex:/^data:image\/png;base64,/'],
-        ]);
-
-        $user = auth()->user();
-        $user->update(['signature' => $validated['signature'] ?? null]);
-
-        return $this->success(
-            new UserResource($user->load('roles')),
-            $validated['signature'] ?? null ? 'Tanda tangan berhasil disimpan' : 'Tanda tangan berhasil dihapus'
-        );
     }
 }

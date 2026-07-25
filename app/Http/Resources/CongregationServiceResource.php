@@ -38,8 +38,6 @@ class CongregationServiceResource extends JsonResource
             'status' => $this->status,
             'notes' => $this->notes,
             'dynamic_fields' => $this->dynamic_fields,
-            'signature_pemohon' => $this->signature_pemohon,
-            'signature_pemohon_at' => $this->signature_pemohon_at,
             'user' => new UserResource($this->whenLoaded('user')),
             'created_at' => $this->created_at,
         ];

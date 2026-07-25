@@ -40,11 +40,11 @@ class BookingPolicy
     public function cancel(User $user, Booking $booking): bool
     {
         return $user->id === $booking->user_id
-            || $user->hasAnyRole(['admin', 'sekretariat']);
+            || $user->hasAnyRole(['p2', 'pastor', 'it_admin', 'sekretariat']);
     }
 
     public function approve(User $user): bool
     {
-        return $user->hasAnyRole(['sekretariat', 'admin']);
+        return $user->hasAnyRole(['sekretariat', 'p2', 'pastor', 'it_admin']);
     }
 }

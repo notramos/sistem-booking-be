@@ -170,16 +170,16 @@ class BookingRepository
     }
 
     /**
-     * Admin melihat semua booking yang masih bisa diaksi (termasuk yang masih di
-     * tahap sekretariat, karena admin bisa override/skip), sekretariat hanya melihat
-     * antrean tahap pertama.
+     * P2/Pastor/IT Admin melihat semua booking yang masih bisa diaksi (termasuk yang
+     * masih di tahap sekretariat, karena mereka bisa override/skip), sekretariat
+     * hanya melihat antrean tahap pertama.
      */
     public function getPendingBookings(User $user): LengthAwarePaginator
     {
         $query = Booking::with(['user:id,name,department', 'room:id,name,slug'])
             ->orderBy('created_at', 'asc');
 
-        if ($user->hasRole('admin')) {
+        if ($user->hasAnyRole(['p2', 'pastor', 'it_admin'])) {
             $query->whereIn('status', [
                 BookingStatus::PENDING->value,
                 BookingStatus::SEKRETARIAT_REVIEW->value,

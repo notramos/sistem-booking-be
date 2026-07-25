@@ -45,7 +45,6 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::put('profile', [ProfileController::class, 'update']);
     Route::put('profile/password', [ProfileController::class, 'changePassword']);
     Route::post('profile/avatar', [ProfileController::class, 'uploadAvatar']);
-    Route::put('profile/signature', [ProfileController::class, 'updateSignature']);
 
     // Room categories & facilities (viewable by all)
     Route::get('room-categories', [RoomCategoryController::class, 'index']);
@@ -71,7 +70,6 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::get('bookings/{booking}', [BookingController::class, 'show']);
     Route::put('bookings/{booking}', [BookingController::class, 'update']);
     Route::delete('bookings/{booking}', [BookingController::class, 'destroy']);
-    Route::post('bookings/{booking}/signature', [BookingController::class, 'sign']);
 
     // Approvals (sekretariat/admin)
     Route::post('bookings/{booking}/start-review', [ApprovalController::class, 'startReview'])->middleware('can:bookings.approve');

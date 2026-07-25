@@ -18,8 +18,6 @@ class Booking extends Model
         'start_time', 'end_time', 'purpose_type', 'expected_attendees',
         'contact_person', 'status', 'notes', 'service_details', 'reject_reason',
         'cancelled_at', 'completed_at',
-        'signature_pemohon', 'signature_pemohon_at',
-        'signature_petugas', 'signature_petugas_at', 'signed_petugas_by',
         'booking_type', 'recurring_pattern', 'recurring_dates',
     ];
 
@@ -36,8 +34,6 @@ class Booking extends Model
             'recurring_dates' => 'array',
             'cancelled_at' => 'datetime',
             'completed_at' => 'datetime',
-            'signature_pemohon_at' => 'datetime',
-            'signature_petugas_at' => 'datetime',
         ];
     }
 
@@ -69,11 +65,6 @@ class Booking extends Model
     public function logs(): HasMany
     {
         return $this->hasMany(BookingLog::class);
-    }
-
-    public function signedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'signed_petugas_by');
     }
 
     public function isPending(): bool

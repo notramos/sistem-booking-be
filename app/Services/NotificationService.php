@@ -46,7 +46,7 @@ class NotificationService
     public function bookingMovedToAdminReview(Booking $booking): void
     {
         $this->safely(function () use ($booking) {
-            $admins = User::role('admin')->get();
+            $admins = User::role(['p2', 'pastor', 'it_admin'])->get();
             Notification::send($admins, new BookingMovedToAdminReview($booking));
         });
     }

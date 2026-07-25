@@ -58,15 +58,8 @@ class CongregationServiceController extends Controller
     {
         $validated = $request->validated();
 
-        // Tanda tangan pemohon: utamakan yang dibubuhkan langsung di form saat mengajukan,
-        // jika tidak ada gunakan tanda tangan tersimpan di profil. Bila keduanya kosong,
-        // dilewati — nama pemohon tetap tampil sebagai "Nama jelas" di dokumen.
-        $signature = $validated['signature_pemohon'] ?? auth()->user()->signature;
-
         $service = CongregationService::create([
             'user_id' => auth()->id(),
-            'signature_pemohon' => $signature,
-            'signature_pemohon_at' => $signature ? now() : null,
             'service_type' => $validated['service_type'],
             'applicant_name' => $validated['applicant_name'],
             'applicant_gender' => $validated['applicant_gender'] ?? null,

@@ -10,16 +10,38 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::firstOrCreate(['email' => 'admin@ealbertus.org'], [
-            'name' => 'Admin Gereja',
+        $itAdmin = User::firstOrCreate(['email' => 'itadmin@ealbertus.org'], [
+            'name' => 'IT Admin Gereja',
+            'password' => Hash::make('password'),
+            'phone' => '081234567889',
+            'department' => 'Administrasi Gereja',
+            'position' => 'IT Admin',
+            'nip' => 'ITA-001',
+            'is_active' => true,
+        ]);
+        $itAdmin->assignRole('it_admin');
+
+        $p2 = User::firstOrCreate(['email' => 'p2@ealbertus.org'], [
+            'name' => 'P2 Gereja',
             'password' => Hash::make('password'),
             'phone' => '081234567890',
             'department' => 'Administrasi Gereja',
-            'position' => 'Admin Sistem',
+            'position' => 'P2',
             'nip' => 'ADM-001',
             'is_active' => true,
         ]);
-        $admin->assignRole('admin');
+        $p2->assignRole('p2');
+
+        $pastor = User::firstOrCreate(['email' => 'pastor@ealbertus.org'], [
+            'name' => 'Pastor Albertus',
+            'password' => Hash::make('password'),
+            'phone' => '081234567893',
+            'department' => 'Kepastoran',
+            'position' => 'Pastor',
+            'nip' => 'PST-001',
+            'is_active' => true,
+        ]);
+        $pastor->assignRole('pastor');
 
         $sekretariat = User::firstOrCreate(['email' => 'sekretariat@ealbertus.org'], [
             'name' => 'Sekretariat Gereja',
@@ -32,15 +54,15 @@ class AdminUserSeeder extends Seeder
         ]);
         $sekretariat->assignRole('sekretariat');
 
-        $jemaat = User::firstOrCreate(['email' => 'jemaat@ealbertus.org'], [
-            'name' => 'Jemaat Albertus',
+        $umat = User::firstOrCreate(['email' => 'umat@ealbertus.org'], [
+            'name' => 'Umat Albertus',
             'password' => Hash::make('password'),
             'phone' => '081234567892',
             'department' => 'Umum',
-            'position' => 'Jemaat',
-            'nip' => 'JMT-001',
+            'position' => 'Umat',
+            'nip' => 'UMT-001',
             'is_active' => true,
         ]);
-        $jemaat->assignRole('jemaat');
+        $umat->assignRole('umat');
     }
 }
