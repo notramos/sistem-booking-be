@@ -16,31 +16,15 @@ class BookingRepository
      *
      * hasConflict()'s SELECT ... FOR UPDATE only locks rows that already exist, so two
      * concurrent requests for a still-open slot can both pass the check before either
-     * INSERT commits (classic phantom-read race). This advisory lock is per-room and is
-     * held for the lifetime of the enclosing transaction, so it fully serializes booking
-     * writes for that room and closes the race. Must be called inside DB::transaction().
-     *
-     * Postgres-only (production/docker always run Postgres, see docker-compose.yml).
-     * No-op on other drivers ONLY in local/testing (e.g. sqlite in tests, which lack
-     * advisory locks) — anywhere else, a non-pgsql driver means the double-booking
-     * race is silently unprotected, so we fail loudly instead of pretending it's safe.
+     * INSERT commits (classic phantom-read race). Row-locking the room itself closes
+     * this race: the room row is guaranteed to already exist, so a standard SELECT ...
+     * FOR UPDATE on it serializes all booking writes for that room for the lifetime of
+     * the enclosing transaction — portable across Postgres and MySQL (no driver-specific
+     * advisory-lock function needed). Must be called inside DB::transaction().
      */
     public function lockRoom(string $roomId): void
     {
-        $driver = DB::connection()->getDriverName();
-
-        if ($driver === 'pgsql') {
-            DB::statement('SELECT pg_advisory_xact_lock(hashtext(?))', [$roomId]);
-
-            return;
-        }
-
-        if (! app()->environment('local', 'testing')) {
-            throw new \RuntimeException(
-                "Booking advisory lock membutuhkan driver 'pgsql' untuk mencegah race condition double-booking, ".
-                "tapi koneksi saat ini pakai driver '{$driver}'. Set DB_CONNECTION=pgsql sebelum menjalankan di lingkungan ini."
-            );
-        }
+        DB::table('rooms')->where('id', $roomId)->lockForUpdate()->first();
     }
 
     public function findOrFail(string $id): Booking
