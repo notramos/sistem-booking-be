@@ -75,21 +75,15 @@ class RoomService
     }
 
     /**
-     * Kelipatan kapasitas maksimum dari jumlah peserta yang masih dianggap "pas" untuk
-     * direkomendasikan — ruangan yang jauh lebih besar (mis. 500 orang untuk acara 5
-     * orang) disembunyikan dari rekomendasi, KECUALI tidak ada pilihan lain yang cukup.
-     */
-    private const RECOMMENDATION_CAPACITY_MULTIPLIER = 2;
-
-    /**
      * Rekomendasi ruangan untuk suatu tanggal berdasarkan jumlah peserta.
      * Ruangan yang kapasitasnya cukup diambil (best-fit terkecil dulu), lalu
      * ketersediaan hari itu dihitung dengan SATU query booking bulk (anti N+1).
-     * Urutan akhir: yang masih punya slot bebas didahulukan, lalu kapasitas
-     * terkecil — sehingga "ruangan paling pas yang masih tersedia" di paling atas.
-     * Ruangan yang kapasitasnya jauh melebihi kebutuhan (> RECOMMENDATION_CAPACITY_MULTIPLIER
-     * kali peserta) disaring dari hasil akhir, kecuali itu satu-satunya pilihan yang tersisa —
-     * jadi list tidak dipenuhi ruangan besar yang tidak relevan untuk acara kecil.
+     * Urutan: yang masih punya slot bebas didahulukan, lalu kapasitas terkecil —
+     * sehingga "ruangan paling pas yang masih tersedia" ada di paling atas.
+     * Hasil akhir cuma menyisakan ruangan pada tingkat kapasitas TERDEKAT itu saja
+     * (bisa lebih dari satu kalau ada beberapa ruangan dengan kapasitas persis
+     * sama) — bukan daftar semua ruangan yang muat, supaya user langsung diarahkan
+     * ke pilihan paling pas alih-alih harus memilah dari daftar panjang.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -119,9 +113,10 @@ class RoomService
                 <=> [$b['has_free_slot'] ? 0 : 1, $b['capacity']])
             ->values();
 
-        $maxReasonableCapacity = $attendees * self::RECOMMENDATION_CAPACITY_MULTIPLIER;
-        $reasonable = $sorted->filter(fn (array $item) => $item['capacity'] <= $maxReasonableCapacity);
-        $final = $reasonable->isNotEmpty() ? $reasonable : $sorted;
+        $closestCapacity = $sorted->first()['capacity'] ?? null;
+        $final = $closestCapacity === null
+            ? $sorted
+            : $sorted->filter(fn (array $item) => $item['capacity'] === $closestCapacity);
 
         return $final
             ->map(fn (array $item) => [
