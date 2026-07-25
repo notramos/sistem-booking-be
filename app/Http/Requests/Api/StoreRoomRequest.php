@@ -15,6 +15,7 @@ class StoreRoomRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
+            'patron_name' => 'nullable|string|max:255',
             'category_id' => 'required|exists:room_categories,id',
             'description' => 'nullable|string',
             'capacity' => 'required|integer|min:1',
@@ -30,6 +31,7 @@ class StoreRoomRequest extends FormRequest
     {
         return [
             'name' => 'nama ruangan',
+            'patron_name' => 'nama santo/santa pelindung',
             'category_id' => 'kategori',
             'description' => 'deskripsi',
             'capacity' => 'kapasitas',

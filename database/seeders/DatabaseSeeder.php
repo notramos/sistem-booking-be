@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             RoomCategorySeeder::class,
             RoomFacilitySeeder::class,
-            DemoRoomSeeder::class,
+            RealRoomSeeder::class,
             WilayahLingkunganSeeder::class,
         ]);
     }

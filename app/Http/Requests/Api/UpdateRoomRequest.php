@@ -15,6 +15,7 @@ class UpdateRoomRequest extends FormRequest
     {
         return [
             'name' => 'sometimes|string|max:255',
+            'patron_name' => 'nullable|string|max:255',
             'category_id' => 'sometimes|exists:room_categories,id',
             'description' => 'nullable|string',
             'capacity' => 'sometimes|integer|min:1',
@@ -30,6 +31,7 @@ class UpdateRoomRequest extends FormRequest
     {
         return [
             'name' => 'nama ruangan',
+            'patron_name' => 'nama santo/santa pelindung',
             'category_id' => 'kategori',
             'description' => 'deskripsi',
             'capacity' => 'kapasitas',

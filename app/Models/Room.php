@@ -18,7 +18,7 @@ class Room extends Model
     use HasUuids, SoftDeletes;
 
     protected $fillable = [
-        'name', 'slug', 'category_id', 'description', 'capacity',
+        'name', 'patron_name', 'slug', 'category_id', 'description', 'capacity',
         'floor', 'building', 'latitude', 'longitude', 'status', 'is_active',
     ];
 

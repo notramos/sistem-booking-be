@@ -19,6 +19,7 @@ class RoomResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'patron_name' => $this->when(array_key_exists('patron_name', $loaded), $this->patron_name),
             'slug' => $this->slug,
             'category_id' => $this->when(array_key_exists('category_id', $loaded), $this->category_id),
             'category' => new RoomCategoryResource($this->whenLoaded('category')),

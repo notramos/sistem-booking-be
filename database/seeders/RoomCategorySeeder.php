@@ -18,6 +18,9 @@ class RoomCategorySeeder extends Seeder
             ['name' => 'Ruang Musik / Koor', 'description' => 'Ruang untuk latihan paduan suara dan musik'],
             ['name' => 'Ruang Rapat Pelayanan', 'description' => 'Ruang untuk rapat koordinasi pelayanan'],
             ['name' => 'Lapangan / Area Outdoor', 'description' => 'Area outdoor untuk kegiatan gereja'],
+            ['name' => 'Lobby / Area Umum', 'description' => 'Area lobby dan ruang umum gedung'],
+            ['name' => 'Ruang Kelas / Pertemuan Kecil', 'description' => 'Ruang kelas dan pertemuan kapasitas kecil-menengah'],
+            ['name' => 'Ruang Serbaguna Sedang', 'description' => 'Ruang serbaguna kapasitas menengah, sebagian bersekat & bisa digabung'],
         ];
 
         foreach ($categories as $cat) {
