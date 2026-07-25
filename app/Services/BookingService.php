@@ -53,6 +53,11 @@ class BookingService
                 throw new RoomNotAvailableException('Tanggal booking minimal H+'.config('booking.min_advance_days').' dari hari ini');
             }
 
+            $maxDate = $this->maxBookableDate()->toDateString();
+            if ($dto->bookingDate > $maxDate) {
+                throw new RoomNotAvailableException('Tanggal booking maksimal sampai '.$this->maxBookableDate()->locale('id')->translatedFormat('d F Y'));
+            }
+
             $blockReason = $this->isSlotBlocked($dto->roomId, $dto->bookingDate, $dto->startTime, $dto->endTime, lockForUpdate: true);
             if ($blockReason === 'maintenance') {
                 throw new RoomNotAvailableException('Ruangan sedang dalam jadwal perbaikan');
@@ -227,14 +232,31 @@ class BookingService
     }
 
     /**
+     * Booking biasa: batas atas tanggal booking. Akhir tahun berjalan, KECUALI
+     * mulai November — pindah ke akhir tahun DEPAN supaya user tidak mentok
+     * cuma bisa booking 1-2 bulan ke depan pas akhir tahun.
+     */
+    private function maxBookableDate(): Carbon
+    {
+        $now = now();
+
+        return $now->month >= 11 ? $now->copy()->addYear()->endOfYear() : $now->copy()->endOfYear();
+    }
+
+    /**
      * @return array<int, string> tanggal (Y-m-d) tiap occurrence, dihitung dari anchor
      *                            (tanggal pertama) supaya tak "drift" pada pola bulanan
      *                            saat ada kliping akhir-bulan (mis. 31 Jan -> 28 Feb).
+     *                            Booking rutin SELALU berhenti di akhir tahun kalender
+     *                            dari tanggal pertamanya — beda dari batas booking biasa
+     *                            di atas (yang bisa maju ke tahun depan mulai November) —
+     *                            supaya tiap seri rutin tetap terkandung dalam satu tahun;
+     *                            lanjut ke tahun berikutnya berarti bikin seri baru.
      */
     private function generateOccurrenceDates(string $firstDate, string $pattern, int $durationMonths): array
     {
         $anchor = Carbon::parse($firstDate);
-        $endDate = $anchor->copy()->addMonths($durationMonths);
+        $endDate = $anchor->copy()->addMonths($durationMonths)->min($anchor->copy()->endOfYear());
         $dates = [];
         $maxOccurrences = 60;
 
@@ -286,6 +308,11 @@ class BookingService
                     throw new RoomNotAvailableException('Tanggal booking minimal H+'.config('booking.min_advance_days').' dari hari ini');
                 }
 
+                $maxDate = $this->maxBookableDate()->toDateString();
+                if ($bookingDate > $maxDate) {
+                    throw new RoomNotAvailableException('Tanggal booking maksimal sampai '.$this->maxBookableDate()->locale('id')->translatedFormat('d F Y'));
+                }
+
                 $isUnderMaintenance = MaintenanceSchedule::forRoom($roomId, $bookingDate)
                     ->where(function ($q) use ($startTime, $endTime) {
                         $q->where('is_all_day', true)
@@ -320,6 +347,64 @@ class BookingService
             }
 
             return $booking;
+        });
+    }
+
+    /**
+     * Ganti SATU tanggal dalam seri booking rutin (dipakai sekretariat/staff dari
+     * kartu "Jadwal Rutin"), tanpa mengubah tanggal lain di seri yang sama. Tanggal
+     * pengganti wajib di tahun yang sama dengan tanggal pertama seri — konsisten
+     * dengan aturan "booking rutin tidak lintas tahun" di generateOccurrenceDates().
+     */
+    public function updateRecurringDate(string $bookingId, string $oldDate, string $newDate): Booking
+    {
+        return DB::transaction(function () use ($bookingId, $oldDate, $newDate) {
+            $booking = $this->bookingRepo->findOrFail($bookingId);
+            $existingDates = $booking->recurring_dates ?? [];
+
+            if ($booking->booking_type !== 'rutin' || ! in_array($oldDate, $existingDates, true)) {
+                throw new \InvalidArgumentException('Tanggal tidak ditemukan di booking rutin ini');
+            }
+
+            $this->bookingRepo->lockRoom($booking->room_id);
+
+            $minDate = now()->addDays(config('booking.min_advance_days'))->toDateString();
+            if ($newDate < $minDate) {
+                throw new RoomNotAvailableException('Tanggal pengganti minimal H+'.config('booking.min_advance_days').' dari hari ini');
+            }
+
+            $anchorYear = Carbon::parse($existingDates[0])->year;
+            if (Carbon::parse($newDate)->year !== $anchorYear) {
+                throw new RoomNotAvailableException("Tanggal pengganti harus di tahun yang sama ({$anchorYear}) — booking rutin tidak bisa lintas tahun");
+            }
+
+            if (in_array($newDate, $existingDates, true)) {
+                throw new BookingConflictException('Tanggal tersebut sudah ada di seri booking rutin ini');
+            }
+
+            $blockReason = $this->isSlotBlocked($booking->room_id, $newDate, $booking->start_time, $booking->end_time, lockForUpdate: true);
+            if ($blockReason === 'maintenance') {
+                throw new RoomNotAvailableException('Ruangan sedang dalam jadwal perbaikan pada tanggal tersebut');
+            }
+            if ($blockReason === 'conflict') {
+                throw new BookingConflictException('Waktu yang dipilih bertabrakan dengan booking lain pada tanggal tersebut');
+            }
+
+            $newDates = collect($existingDates)
+                ->reject(fn ($d) => $d === $oldDate)
+                ->push($newDate)
+                ->sort()
+                ->values()
+                ->all();
+
+            $booking->update([
+                'recurring_dates' => $newDates,
+                'booking_date' => $newDates[0],
+            ]);
+
+            $this->roomRepo->clearAvailabilityCache();
+
+            return $booking->fresh();
         });
     }
 

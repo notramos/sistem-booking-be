@@ -69,5 +69,29 @@ class BookingObserver
                 'description' => "Jadwal diubah oleh {$actorName}: ".implode(', ', $changes),
             ]);
         }
+
+        // Ganti satu tanggal dalam seri booking rutin (updateRecurringDate()) — kalau
+        // tanggal yang diganti BUKAN yang paling awal, booking_date tidak ikut berubah,
+        // jadi butuh entri log sendiri supaya perubahan tetap tercatat.
+        if ($booking->isDirty('recurring_dates') && ! $booking->isDirty('booking_date')) {
+            $oldDates = $booking->getOriginal('recurring_dates') ?? [];
+            $newDates = $booking->recurring_dates ?? [];
+            $removed = array_values(array_diff($oldDates, $newDates));
+            $added = array_values(array_diff($newDates, $oldDates));
+            $oldDate = $removed[0] ?? null;
+            $newDate = $added[0] ?? null;
+
+            if ($oldDate && $newDate) {
+                $actorName = auth()->user()->name ?? 'Sistem';
+
+                BookingLog::create([
+                    'booking_id' => $booking->id,
+                    'user_id' => auth()->id() ?? $booking->user_id,
+                    'action' => 'rescheduled',
+                    'description' => "Satu tanggal booking rutin diubah oleh {$actorName}: "
+                        .Carbon::parse($oldDate)->format('d M Y').' ke '.Carbon::parse($newDate)->format('d M Y'),
+                ]);
+            }
+        }
     }
 }

@@ -47,4 +47,15 @@ class BookingPolicy
     {
         return $user->hasAnyRole(['sekretariat', 'p2', 'pastor', 'it_admin']);
     }
+
+    /**
+     * Ganti satu tanggal dalam seri booking rutin — staf mana pun (bukan cuma
+     * sekretariat tahap pertama seperti RoomReallocationCard), selama booking
+     * belum di status final.
+     */
+    public function editRecurringDate(User $user, Booking $booking): bool
+    {
+        return $user->hasAnyRole(['sekretariat', 'p2', 'pastor', 'it_admin'])
+            && in_array($booking->status, BookingStatus::nonFinal());
+    }
 }

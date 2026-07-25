@@ -25,7 +25,7 @@ class PreviewRecurringBookingRequest extends FormRequest
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'pattern' => 'required|in:weekly,monthly',
-            'duration_months' => 'required|integer|in:1,3,6,12',
+            'duration_months' => 'required|integer|in:1,2,3',
         ];
     }
 

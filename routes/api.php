@@ -69,6 +69,7 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::post('bookings/recurring', [BookingController::class, 'storeRecurring']);
     Route::get('bookings/{booking}', [BookingController::class, 'show']);
     Route::put('bookings/{booking}', [BookingController::class, 'update']);
+    Route::patch('bookings/{booking}/recurring-dates', [BookingController::class, 'updateRecurringDate']);
     Route::delete('bookings/{booking}', [BookingController::class, 'destroy']);
 
     // Approvals (sekretariat/admin)

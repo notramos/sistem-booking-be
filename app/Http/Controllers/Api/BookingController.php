@@ -163,6 +163,21 @@ class BookingController extends Controller
         return $this->success(new BookingResource($booking), 'Booking berhasil diperbarui');
     }
 
+    public function updateRecurringDate(Request $request, string $id): JsonResponse
+    {
+        $booking = Booking::findOrFail($id);
+        $this->authorize('editRecurringDate', $booking);
+
+        $validated = $request->validate([
+            'old_date' => 'required|date_format:Y-m-d',
+            'new_date' => 'required|date_format:Y-m-d',
+        ]);
+
+        $booking = $this->bookingService->updateRecurringDate($id, $validated['old_date'], $validated['new_date']);
+
+        return $this->success(new BookingResource($booking->load(['user', 'room', 'approvals', 'logs.user'])), 'Tanggal booking rutin berhasil diubah');
+    }
+
     public function destroy(string $id): JsonResponse
     {
         $booking = Booking::findOrFail($id);
