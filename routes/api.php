@@ -76,7 +76,6 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::post('bookings/{booking}/start-review', [ApprovalController::class, 'startReview'])->middleware('can:bookings.approve');
     Route::post('bookings/{booking}/approve', [ApprovalController::class, 'approve'])->middleware('can:bookings.approve');
     Route::post('bookings/{booking}/reject', [ApprovalController::class, 'reject'])->middleware('can:bookings.reject');
-    Route::post('bookings/{booking}/revise', [ApprovalController::class, 'revise'])->middleware('can:bookings.approve');
 
     // Congregation Services
     Route::get('congregation-services', [CongregationServiceController::class, 'index']);

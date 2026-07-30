@@ -115,41 +115,6 @@ class ApprovalService
     }
 
     /**
-     * Kirim booking kembali ke pemohon untuk diperbaiki. Status revisi menyimpan
-     * tahap mana yang memintanya, supaya resubmit tahu harus kembali ke mana.
-     */
-    public function requestRevision(string $bookingId, User $approver, string $reason): Booking
-    {
-        return DB::transaction(function () use ($bookingId, $approver, $reason) {
-            $booking = $this->bookingRepo->findOrFail($bookingId);
-            $isAdmin = $approver->hasAnyRole(['p2', 'pastor', 'it_admin']);
-
-            if (! $isAdmin && ! in_array($booking->status, [BookingStatus::PENDING->value, BookingStatus::SEKRETARIAT_REVIEW->value])) {
-                throw new \InvalidArgumentException('Booking sudah melewati tahap sekretariat');
-            }
-
-            if (! in_array($booking->status, BookingStatus::nonFinal())) {
-                throw new \InvalidArgumentException('Booking sudah tidak dalam status yang bisa direvisi');
-            }
-
-            $stage = $isAdmin ? 'admin' : 'sekretariat';
-            $newStatus = $isAdmin ? BookingStatus::REVISION_ADMIN->value : BookingStatus::REVISION_SEKRETARIAT->value;
-
-            $booking->update(['status' => $newStatus]);
-
-            BookingApproval::updateOrCreate(
-                ['booking_id' => $booking->id, 'stage' => $stage],
-                ['approver_id' => $approver->id, 'action' => 'revision', 'notes' => $reason]
-            );
-
-            $this->auditService->log('booking.revision_requested', $booking);
-            $this->notificationService->bookingRevisionRequested($booking, $reason);
-
-            return $booking;
-        });
-    }
-
-    /**
      * Pemohon mengedit & mengajukan ulang booking yang diminta revisi — kembali
      * ke tahap yang sama yang memintanya (bukan selalu ke awal).
      */

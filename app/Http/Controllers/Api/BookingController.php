@@ -148,13 +148,18 @@ class BookingController extends Controller
         }
 
         $isStaffRealloc = $user->hasRole('sekretariat') && $booking->status === BookingStatus::SEKRETARIAT_REVIEW->value;
+        $isOwnerEditableStatus = $isOwner && in_array($booking->status, [
+            BookingStatus::PENDING->value,
+            BookingStatus::SEKRETARIAT_REVIEW->value,
+        ]);
 
-        if (! $isStaffRealloc && ! $booking->isPending()) {
+        if (! $isStaffRealloc && ! $isOwnerEditableStatus) {
             return $this->error('Booking tidak dapat diubah karena sudah diproses', 422);
         }
 
+        $canChangeRoomOrDate = $isStaffRealloc || $isOwnerEditableStatus;
         $validated = $request->validated();
-        if (! $isStaffRealloc && (isset($validated['room_id']) || isset($validated['booking_date']))) {
+        if (! $canChangeRoomOrDate && (isset($validated['room_id']) || isset($validated['booking_date']))) {
             return $this->error('Anda tidak berhak mengubah ruangan/tanggal booking ini', 422);
         }
 

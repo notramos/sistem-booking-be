@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\ApproveActionRequest;
 use App\Http\Requests\Api\RejectActionRequest;
-use App\Http\Requests\Api\ReviseActionRequest;
 use App\Http\Resources\BookingResource;
 use App\Http\Response\ApiResponse;
 use App\Services\ApprovalService;
@@ -53,20 +52,6 @@ class ApprovalController extends Controller
         return $this->success(
             new BookingResource($booking->load(['user:id,name,email', 'room:id,name'])),
             'Booking ditolak'
-        );
-    }
-
-    public function revise(ReviseActionRequest $request, string $bookingId): JsonResponse
-    {
-        $booking = $this->approvalService->requestRevision(
-            bookingId: $bookingId,
-            approver: $request->user(),
-            reason: $request->reason,
-        );
-
-        return $this->success(
-            new BookingResource($booking->load(['user:id,name,email', 'room:id,name'])),
-            'Revisi diminta'
         );
     }
 }

@@ -26,6 +26,7 @@ class BookingPolicy
         $isOwner = $user->id === $booking->user_id;
         $ownerEditableStatuses = [
             BookingStatus::PENDING->value,
+            BookingStatus::SEKRETARIAT_REVIEW->value,
             BookingStatus::REVISION_SEKRETARIAT->value,
             BookingStatus::REVISION_ADMIN->value,
         ];

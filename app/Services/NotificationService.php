@@ -9,7 +9,6 @@ use App\Notifications\BookingCancelled;
 use App\Notifications\BookingCreated;
 use App\Notifications\BookingMovedToAdminReview;
 use App\Notifications\BookingRejected;
-use App\Notifications\BookingRevisionRequested;
 use App\Notifications\RecurringBookingCreated;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
@@ -49,11 +48,6 @@ class NotificationService
             $admins = User::role(['p2', 'pastor', 'it_admin'])->get();
             Notification::send($admins, new BookingMovedToAdminReview($booking));
         });
-    }
-
-    public function bookingRevisionRequested(Booking $booking, string $reason): void
-    {
-        $this->safely(fn () => $booking->user->notify(new BookingRevisionRequested($booking, $reason)));
     }
 
     public function bookingCancelled(Booking $booking): void
