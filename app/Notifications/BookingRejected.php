@@ -37,6 +37,9 @@ class BookingRejected extends Notification
             'booking_id' => $this->booking->id,
             'title' => $this->booking->title,
             'room_name' => $this->booking->room->name,
+            'booking_date' => $this->booking->booking_date->format('Y-m-d'),
+            'start_time' => $this->booking->start_time,
+            'end_time' => $this->booking->end_time,
             'reason' => $this->booking->reject_reason,
             'type' => 'booking_rejected',
         ];

@@ -39,6 +39,9 @@ class BookingApproved extends Notification
             'title' => $this->booking->title,
             'room_name' => $this->booking->room->name,
             'booking_date' => $this->booking->booking_date->format('Y-m-d'),
+            'start_time' => $this->booking->start_time,
+            'end_time' => $this->booking->end_time,
+            'booker_name' => $this->booking->user->name,
             'type' => 'booking_approved',
         ];
     }
