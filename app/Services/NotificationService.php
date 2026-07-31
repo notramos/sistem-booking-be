@@ -3,12 +3,16 @@
 namespace App\Services;
 
 use App\Models\Booking;
+use App\Models\CongregationService;
 use App\Models\User;
 use App\Notifications\BookingApproved;
 use App\Notifications\BookingCancelled;
 use App\Notifications\BookingCreated;
+use App\Notifications\BookingForwardedToAdmin;
 use App\Notifications\BookingMovedToAdminReview;
 use App\Notifications\BookingRejected;
+use App\Notifications\CongregationServiceApproved;
+use App\Notifications\CongregationServiceRejected;
 use App\Notifications\RecurringBookingCreated;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
@@ -42,12 +46,28 @@ class NotificationService
         });
     }
 
+    /**
+     * Sekretariat menyetujui tahap pertama: admin diminta bertindak, dan pemohon
+     * diberi kabar kemajuan supaya tidak merasa pengajuannya mengambang.
+     */
     public function bookingMovedToAdminReview(Booking $booking): void
     {
         $this->safely(function () use ($booking) {
             $admins = User::role(['p2', 'pastor', 'it_admin'])->get();
             Notification::send($admins, new BookingMovedToAdminReview($booking));
         });
+
+        $this->safely(fn () => $booking->user->notify(new BookingForwardedToAdmin($booking)));
+    }
+
+    public function congregationServiceApproved(CongregationService $service): void
+    {
+        $this->safely(fn () => $service->user?->notify(new CongregationServiceApproved($service)));
+    }
+
+    public function congregationServiceRejected(CongregationService $service): void
+    {
+        $this->safely(fn () => $service->user?->notify(new CongregationServiceRejected($service)));
     }
 
     public function bookingCancelled(Booking $booking): void

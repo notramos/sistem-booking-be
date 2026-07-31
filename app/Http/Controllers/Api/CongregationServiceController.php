@@ -12,6 +12,7 @@ use App\Models\CongregationService;
 use App\Models\User;
 use App\Notifications\CongregationServiceCreated;
 use App\Services\AuditService;
+use App\Services\NotificationService;
 use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,10 @@ class CongregationServiceController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(private AuditService $auditService) {}
+    public function __construct(
+        private AuditService $auditService,
+        private NotificationService $notificationService,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -114,6 +118,7 @@ class CongregationServiceController extends Controller
         ]);
 
         $this->auditService->log('congregation_service_approved', $service);
+        $this->notificationService->congregationServiceApproved($service);
 
         return $this->success(
             new CongregationServiceResource($service->load('user:id,name,email')),
@@ -135,6 +140,7 @@ class CongregationServiceController extends Controller
         ]);
 
         $this->auditService->log('congregation_service_rejected', $service);
+        $this->notificationService->congregationServiceRejected($service);
 
         return $this->success(
             new CongregationServiceResource($service->load('user:id,name,email')),
