@@ -15,6 +15,7 @@ class WilayahResource extends JsonResource
             'lingkungan' => $this->whenLoaded('lingkungan', fn () => $this->lingkungan->map(fn ($l) => [
                 'id' => $l->id,
                 'name' => $l->name,
+                'area' => $l->area,
             ])),
         ];
     }

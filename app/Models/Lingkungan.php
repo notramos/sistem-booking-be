@@ -12,7 +12,7 @@ class Lingkungan extends Model
 
     protected $table = 'lingkungan';
 
-    protected $fillable = ['wilayah_id', 'name', 'is_active'];
+    protected $fillable = ['wilayah_id', 'name', 'area', 'is_active'];
 
     protected function casts(): array
     {
