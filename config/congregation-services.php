@@ -158,6 +158,25 @@ return [
                 'permohonan_lainnya', 'stipendium_amount', 'stipendium_terbilang',
             ],
         ],
+
+        'permohonan_misa' => [
+            'label' => 'Permohonan Misa',
+            'description' => 'Permohonan agar misa diadakan di luar jadwal tetap (misa lingkungan, rumah, arwah, syukur)',
+            'required_fields' => ['applicant_name', 'contact', 'neighborhood'],
+            'dynamic_fields' => [
+                'jenis_misa', 'tanggal_misa_diminta', 'jam_misa_diminta',
+                'tempat_misa', 'alamat_misa', 'perkiraan_umat', 'kebutuhan_petugas',
+            ],
+        ],
+
+        'konsultasi_romo' => [
+            'label' => 'Konsultasi Romo',
+            'description' => 'Permohonan jadwal konsultasi/pendampingan dengan romo',
+            'required_fields' => ['applicant_name', 'contact', 'neighborhood'],
+            'dynamic_fields' => [
+                'topik_konsultasi', 'tanggal_diminta', 'waktu_preferensi', 'sifat',
+            ],
+        ],
     ],
 
     'statuses' => ['pending', 'approved', 'rejected', 'cancelled', 'completed'],
