@@ -91,6 +91,19 @@ class BookingObserver
                     'description' => "Satu tanggal booking rutin diubah oleh {$actorName}: "
                         .Carbon::parse($oldDate)->format('d M Y').' ke '.Carbon::parse($newDate)->format('d M Y'),
                 ]);
+            } elseif ($oldDate && ! $newDate) {
+                // Hapus tanggal (deleteRecurringDate()) — kalau tanggal yang dihapus BUKAN
+                // yang paling awal, booking_date tidak ikut berubah, jadi butuh entri log
+                // sendiri di sini juga (mirror blok "diubah" di atas).
+                $actorName = auth()->user()->name ?? 'Sistem';
+
+                BookingLog::create([
+                    'booking_id' => $booking->id,
+                    'user_id' => auth()->id() ?? $booking->user_id,
+                    'action' => 'rescheduled',
+                    'description' => "Satu tanggal booking rutin dihapus oleh {$actorName}: "
+                        .Carbon::parse($oldDate)->format('d M Y'),
+                ]);
             }
         }
     }

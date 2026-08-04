@@ -411,6 +411,45 @@ class BookingService
         });
     }
 
+    /**
+     * Hapus SATU tanggal dari seri booking rutin tanpa menggantinya — beda dari
+     * updateRecurringDate() yang mengganti dengan tanggal lain. Tidak perlu cek
+     * ketersediaan ruangan/H+7 seperti update, karena menghapus tidak mungkin
+     * menyebabkan konflik jadwal baru.
+     */
+    public function deleteRecurringDate(string $bookingId, string $date): Booking
+    {
+        return DB::transaction(function () use ($bookingId, $date) {
+            $booking = $this->bookingRepo->findOrFail($bookingId);
+            $existingDates = $booking->recurring_dates ?? [];
+
+            if ($booking->booking_type !== 'rutin' || ! in_array($date, $existingDates, true)) {
+                throw new \InvalidArgumentException('Tanggal tidak ditemukan di booking rutin ini');
+            }
+
+            if (count($existingDates) === 1) {
+                throw new \InvalidArgumentException('Tidak bisa menghapus satu-satunya tanggal tersisa. Batalkan booking ini jika ingin menghentikan seluruh seri.');
+            }
+
+            $this->bookingRepo->lockRoom($booking->room_id);
+
+            $newDates = collect($existingDates)
+                ->reject(fn ($d) => $d === $date)
+                ->sort()
+                ->values()
+                ->all();
+
+            $booking->update([
+                'recurring_dates' => $newDates,
+                'booking_date' => $newDates[0],
+            ]);
+
+            $this->roomRepo->clearAvailabilityCache();
+
+            return $booking->fresh();
+        });
+    }
+
     public function cancel(string $id): Booking
     {
         return DB::transaction(function () use ($id) {
