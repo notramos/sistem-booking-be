@@ -134,6 +134,16 @@ class BookingRepository
 
     private function toCalendarEvent(Booking $booking, string $date): array
     {
+        // Booking Auditorium ditandai warna ungu tersendiri (beda dari warna status
+        // ruangan lain) supaya langsung terlihat di kalender tanpa perlu dibuka dulu.
+        $isAuditorium = $booking->room->name === '401 / Auditorium';
+        $color = $isAuditorium ? '#8b5cf6' : match ($booking->status) {
+            BookingStatus::PENDING->value => '#f59e0b',
+            BookingStatus::APPROVED->value => '#22c55e',
+            BookingStatus::COMPLETED->value => '#6366f1',
+            default => '#6b7280',
+        };
+
         return [
             'id' => "{$booking->id}::{$date}",
             'booking_id' => $booking->id,
@@ -146,18 +156,8 @@ class BookingRepository
             'start_time' => $booking->start_time,
             'end_time' => $booking->end_time,
             'status' => $booking->status,
-            'backgroundColor' => match ($booking->status) {
-                BookingStatus::PENDING->value => '#f59e0b',
-                BookingStatus::APPROVED->value => '#22c55e',
-                BookingStatus::COMPLETED->value => '#6366f1',
-                default => '#6b7280',
-            },
-            'borderColor' => match ($booking->status) {
-                BookingStatus::PENDING->value => '#f59e0b',
-                BookingStatus::APPROVED->value => '#22c55e',
-                BookingStatus::COMPLETED->value => '#6366f1',
-                default => '#6b7280',
-            },
+            'backgroundColor' => $color,
+            'borderColor' => $color,
             'textColor' => '#ffffff',
             'display' => 'block',
             'extendedProps' => [
