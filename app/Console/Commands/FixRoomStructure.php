@@ -138,7 +138,26 @@ class FixRoomStructure extends Command
             return true;
         }
 
-        $bookings = DB::table('bookings')->where('room_id', $combined->id)->get();
+        // Buang dulu booking cancelled ("Pertemuan Rapat OMK Wilayah", "Adhi P - ASAK")
+        // dan duplikat "Adhi Purwoko" (yang benar dipakai adalah "Adhi P") — dikonfirmasi user.
+        $toDelete = DB::table('bookings')
+            ->where('room_id', $combined->id)
+            ->where(function ($q) {
+                $q->where('status', 'cancelled')->orWhere('title', 'Adhi Purwoko');
+            })
+            ->get(['id', 'title', 'status']);
+
+        foreach ($toDelete as $b) {
+            $this->line("  Hapus (cancelled/duplikat): \"{$b->title}\" (status={$b->status})");
+        }
+        if (! $isDryRun && $toDelete->isNotEmpty()) {
+            DB::table('bookings')->whereIn('id', $toDelete->pluck('id'))->delete();
+        }
+
+        $bookings = DB::table('bookings')
+            ->where('room_id', $combined->id)
+            ->whereNotIn('id', $toDelete->pluck('id'))
+            ->get();
 
         $target308 = [];
         $target307 = [];
@@ -226,7 +245,7 @@ class FixRoomStructure extends Command
     private function matches307(object $b): bool
     {
         return $b->booking_type === 'rutin'
-            && $b->title === 'Adhi Purwoko'
+            && $b->title === 'Adhi P'
             && str_contains((string) $b->description, 'ASAK')
             && substr($b->start_time, 0, 5) === '10:00'
             && substr($b->end_time, 0, 5) === '11:30';
