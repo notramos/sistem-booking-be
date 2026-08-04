@@ -256,7 +256,10 @@ class BookingService
     private function generateOccurrenceDates(string $firstDate, string $pattern, int $durationMonths): array
     {
         $anchor = Carbon::parse($firstDate);
-        $endDate = $anchor->copy()->addMonths($durationMonths)->min($anchor->copy()->endOfYear());
+        // -1 hari: tanggal pertama pengajuan dihitung sebagai bulan ke-1, bukan bulan ke-0.
+        // Tanpa ini, durasi "3 bulan" dari anchor.addMonths(3) tetap termasuk tanggal pas
+        // 3 bulan kemudian sebagai kemunculan tambahan, jadi rentangnya jadi 4 bulan.
+        $endDate = $anchor->copy()->addMonths($durationMonths)->subDay()->min($anchor->copy()->endOfYear());
         $dates = [];
         $maxOccurrences = 60;
 
