@@ -5,13 +5,12 @@ namespace App\Jobs;
 use App\Enums\BookingStatus;
 use App\Models\Booking;
 use App\Notifications\BookingReminder;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Queue\Queueable;
 
-class SendBookingReminder implements ShouldQueue
+/**
+ * SENGAJA tidak implements ShouldQueue — lihat penjelasan di AutoCompleteBooking.
+ */
+class SendBookingReminder
 {
-    use Queueable;
-
     public function handle(): void
     {
         $tomorrowBookings = Booking::with(['user', 'room'])
