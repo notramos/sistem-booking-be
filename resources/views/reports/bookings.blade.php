@@ -25,7 +25,8 @@
         <thead>
             <tr>
                 <th>No</th>
-                <th>Judul</th>
+                <th>Peminjam</th>
+                <th>Kegiatan</th>
                 <th>Ruangan</th>
                 <th>Pemesan</th>
                 <th>Tanggal</th>
@@ -38,6 +39,7 @@
             <tr>
                 <td>{{ $index + 1 }}</td>
                 <td>{{ $booking->title }}</td>
+                <td>{{ $booking->description ?? '-' }}</td>
                 <td>{{ $booking->room->name ?? '-' }}</td>
                 <td>{{ $booking->user->name ?? '-' }}</td>
                 <td>{{ $booking->booking_date }}</td>

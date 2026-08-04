@@ -85,7 +85,8 @@ class ReportController extends Controller
                 {
                     if ($this->type === 'bookings') {
                         return $this->data->map(fn ($b) => [
-                            'Judul' => $b->title,
+                            'Peminjam' => $b->title,
+                            'Kegiatan' => $b->description ?? '-',
                             'Ruangan' => $b->room->name ?? '-',
                             'Pemesan' => $b->user->name ?? '-',
                             'Tanggal' => $b->booking_date,
@@ -101,7 +102,7 @@ class ReportController extends Controller
                 public function headings(): array
                 {
                     return $this->type === 'bookings'
-                        ? ['Judul', 'Ruangan', 'Pemesan', 'Tanggal', 'Mulai', 'Selesai', 'Status']
+                        ? ['Peminjam', 'Kegiatan', 'Ruangan', 'Pemesan', 'Tanggal', 'Mulai', 'Selesai', 'Status']
                         : ['Nama Ruangan', 'Kapasitas', 'Total Booking', 'Menit Terpakai', 'Utilisasi (%)'];
                 }
             },
