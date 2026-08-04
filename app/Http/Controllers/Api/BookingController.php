@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\DTOs\BookingDTO;
 use App\DTOs\CalendarFilterDTO;
+use App\DTOs\ManualBookingDTO;
 use App\Enums\BookingStatus;
 use App\Http\Controllers\Controller;
 use App\DTOs\RecurringBookingDTO;
 use App\DTOs\RecurringPreviewDTO;
 use App\Http\Requests\Api\PreviewRecurringBookingRequest;
 use App\Http\Requests\Api\StoreBookingRequest;
+use App\Http\Requests\Api\StoreManualBookingRequest;
 use App\Http\Requests\Api\StoreRecurringBookingRequest;
 use App\Http\Requests\Api\UpdateBookingRequest;
 use App\Http\Resources\BookingResource;
@@ -72,6 +74,31 @@ class BookingController extends Controller
         return $this->created(
             new BookingResource($booking->load(['room:id,name,slug', 'user:id,name'])),
             'Booking berhasil dibuat dan menunggu persetujuan'
+        );
+    }
+
+    public function storeManual(StoreManualBookingRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $dto = new ManualBookingDTO(
+            userId: $request->user()->id,
+            roomId: $validated['room_id'],
+            title: $validated['title'],
+            bookingDate: $validated['booking_date'],
+            startTime: $validated['start_time'],
+            endTime: $validated['end_time'],
+            status: $validated['status'],
+            description: $validated['description'] ?? null,
+            contactPerson: $validated['contact_person'] ?? null,
+            expectedAttendees: $validated['expected_attendees'] ?? null,
+        );
+
+        $booking = $this->bookingService->createManual($dto);
+
+        return $this->created(
+            new BookingResource($booking->load(['room:id,name,slug', 'user:id,name'])),
+            'Booking manual berhasil ditambahkan'
         );
     }
 

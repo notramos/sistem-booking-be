@@ -65,6 +65,7 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::get('bookings/pending', [BookingController::class, 'pending'])->middleware('can:bookings.approve');
     Route::get('bookings/calendar', [BookingController::class, 'calendar']);
     Route::post('bookings', [BookingController::class, 'store']);
+    Route::post('bookings/manual', [BookingController::class, 'storeManual'])->middleware('can:bookings.approve');
     Route::post('bookings/recurring/preview', [BookingController::class, 'previewRecurring']);
     Route::post('bookings/recurring', [BookingController::class, 'storeRecurring']);
     Route::get('bookings/{booking}', [BookingController::class, 'show']);

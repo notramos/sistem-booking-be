@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\DTOs\BookingDTO;
+use App\DTOs\ManualBookingDTO;
 use App\DTOs\RecurringBookingDTO;
 use App\DTOs\RecurringBookingResult;
 use App\DTOs\RecurringPreviewDTO;
@@ -83,6 +84,54 @@ class BookingService
 
             $this->auditService->log('booking.created', $booking);
             $this->notificationService->bookingCreated($booking);
+            $this->roomRepo->clearAvailabilityCache();
+
+            return $booking;
+        });
+    }
+
+    /**
+     * Input manual oleh staf (sekretariat/admin) — untuk data historis/pra-sepakat di
+     * luar sistem (mis. impor dari catatan lama) atau booking yang langsung ingin
+     * dicatat berstatus final. Beda dari create(): TIDAK menegakkan H+7/batas akhir
+     * tahun/jam operasional (staf yang menjamin datanya, bukan pengajuan yang perlu
+     * divalidasi ke pemohon) — tapi tetap menolak kalau ruangan sedang maintenance
+     * atau bentrok booking lain, supaya tidak menimpa data yang sudah ada.
+     */
+    public function createManual(ManualBookingDTO $dto): Booking
+    {
+        return DB::transaction(function () use ($dto) {
+            $this->bookingRepo->lockRoom($dto->roomId);
+
+            $room = $this->roomRepo->findOrFail($dto->roomId);
+
+            if ($dto->expectedAttendees !== null && $dto->expectedAttendees > (int) $room->capacity) {
+                throw new RoomNotAvailableException("Jumlah peserta melebihi kapasitas ruangan ({$room->capacity} orang)");
+            }
+
+            $blockReason = $this->isSlotBlocked($dto->roomId, $dto->bookingDate, $dto->startTime, $dto->endTime, lockForUpdate: true);
+            if ($blockReason === 'maintenance') {
+                throw new RoomNotAvailableException('Ruangan sedang dalam jadwal perbaikan');
+            }
+            if ($blockReason === 'conflict') {
+                throw new BookingConflictException('Waktu yang dipilih bertabrakan dengan booking lain yang sudah disetujui/menunggu');
+            }
+
+            $booking = $this->bookingRepo->create([
+                'user_id' => $dto->userId,
+                'room_id' => $dto->roomId,
+                'title' => $dto->title,
+                'description' => $dto->description,
+                'booking_date' => $dto->bookingDate,
+                'start_time' => $dto->startTime,
+                'end_time' => $dto->endTime,
+                'expected_attendees' => $dto->expectedAttendees,
+                'contact_person' => $dto->contactPerson,
+                'status' => $dto->status,
+                'booking_type' => 'reguler',
+            ]);
+
+            $this->auditService->log('booking.created_manual', $booking);
             $this->roomRepo->clearAvailabilityCache();
 
             return $booking;
