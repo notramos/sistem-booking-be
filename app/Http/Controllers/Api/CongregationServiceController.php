@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\ApproveActionRequest;
 use App\Http\Requests\Api\RejectActionRequest;
 use App\Http\Requests\Api\StoreCongregationServiceRequest;
+use App\Http\Requests\Api\StoreManualCongregationServiceRequest;
 use App\Http\Resources\CongregationServiceResource;
 use App\Http\Response\ApiResponse;
 use App\Models\CongregationService;
@@ -101,6 +102,55 @@ class CongregationServiceController extends Controller
         return $this->created(
             new CongregationServiceResource($service->load('user:id,name,email')),
             'Permohonan pelayanan umat berhasil dikirim'
+        );
+    }
+
+    /**
+     * Entri manual oleh staf (mis. backfill permohonan intensi misa yang datang
+     * lewat kertas/WA) — beda dari store() biasa: user_id-nya staf yang input
+     * (bukan otomatis dari akun pemohon), status bisa langsung diisi (tidak
+     * dipaksa 'pending'), dan tidak mengirim notifikasi "permohonan baru" ke
+     * sekretariat karena stafnya sendiri yang input. Pola sama seperti
+     * BookingController::storeManual().
+     */
+    public function storeManual(StoreManualCongregationServiceRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $service = CongregationService::create([
+            'user_id' => $request->user()->id,
+            'service_type' => $validated['service_type'],
+            'applicant_name' => $validated['applicant_name'],
+            'applicant_gender' => $validated['applicant_gender'] ?? null,
+            'baptismal_name' => $validated['baptismal_name'] ?? null,
+            'birth_place' => $validated['birth_place'] ?? null,
+            'birth_date' => $validated['birth_date'] ?? null,
+            'address' => $validated['address'] ?? null,
+            'contact' => $validated['contact'],
+            'phone' => $validated['phone'] ?? null,
+            'mobile_phone' => $validated['mobile_phone'] ?? null,
+            'neighborhood' => $validated['neighborhood'] ?? null,
+            'region' => $validated['region'] ?? null,
+            'parish' => $validated['parish'] ?? null,
+            'father_name' => $validated['father_name'] ?? null,
+            'father_religion' => $validated['father_religion'] ?? null,
+            'mother_name' => $validated['mother_name'] ?? null,
+            'mother_religion' => $validated['mother_religion'] ?? null,
+            'school' => $validated['school'] ?? null,
+            'grade' => $validated['grade'] ?? null,
+            'occupation' => $validated['occupation'] ?? null,
+            'family_card_number' => $validated['family_card_number'] ?? null,
+            'service_date' => $validated['service_date'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'status' => $validated['status'],
+            'dynamic_fields' => $validated['dynamic_fields'] ?? [],
+        ]);
+
+        $this->auditService->log('congregation_service_created_manual', $service);
+
+        return $this->created(
+            new CongregationServiceResource($service->load('user:id,name,email')),
+            'Permohonan pelayanan umat berhasil ditambahkan'
         );
     }
 
