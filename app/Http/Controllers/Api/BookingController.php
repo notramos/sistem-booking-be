@@ -265,7 +265,7 @@ class BookingController extends Controller
             start: $request->start,
             end: $request->end,
             roomId: $request->room_id,
-            userId: $request->user()->canViewAllBookings() ? null : $request->user()->id,
+            viewer: $request->user(),
         );
 
         $events = $this->calendarService->getEvents($dto);

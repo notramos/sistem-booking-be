@@ -15,7 +15,7 @@ class CalendarService
 
     public function getEvents(CalendarFilterDTO $dto): Collection
     {
-        $bookings = $this->bookingRepo->getCalendarData($dto->start, $dto->end, $dto->roomId, $dto->userId);
+        $bookings = $this->bookingRepo->getCalendarData($dto->start, $dto->end, $dto->roomId, $dto->viewer);
 
         $maintenance = MaintenanceSchedule::with('room')
             ->whereBetween('start_date', [$dto->start, $dto->end])

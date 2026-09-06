@@ -94,7 +94,7 @@ class BookingRepository
      * kalender per tanggal. Filter rentang untuk rutin dilakukan di PHP (bukan di query)
      * karena recurring_dates cuma JSON array, bukan kolom yang bisa di-BETWEEN.
      */
-    public function getCalendarData(string $start, string $end, ?string $roomId = null, ?string $userId = null): Collection
+    public function getCalendarData(string $start, string $end, ?string $roomId = null, ?User $viewer = null): Collection
     {
         $statuses = [
             BookingStatus::PENDING->value,
@@ -103,7 +103,6 @@ class BookingRepository
         ];
 
         $reguler = Booking::with(['room:id,name,slug', 'user:id,name'])
-            ->when($userId !== null, fn ($q) => $q->where('user_id', $userId))
             ->where('booking_type', 'reguler')
             ->whereBetween('booking_date', [$start, $end])
             ->whereIn('status', $statuses)
@@ -111,7 +110,6 @@ class BookingRepository
             ->get();
 
         $rutin = Booking::with(['room:id,name,slug', 'user:id,name'])
-            ->when($userId !== null, fn ($q) => $q->where('user_id', $userId))
             ->where('booking_type', 'rutin')
             ->whereIn('status', $statuses)
             ->when($roomId, fn ($q) => $q->where('room_id', $roomId))
@@ -120,13 +118,13 @@ class BookingRepository
         $events = collect();
 
         foreach ($reguler as $booking) {
-            $events->push($this->toCalendarEvent($booking, $booking->booking_date->format('Y-m-d')));
+            $events->push($this->toCalendarEvent($booking, $booking->booking_date->format('Y-m-d'), $viewer));
         }
 
         foreach ($rutin as $booking) {
             foreach (($booking->recurring_dates ?? []) as $date) {
                 if ($date >= $start && $date <= $end) {
-                    $events->push($this->toCalendarEvent($booking, $date));
+                    $events->push($this->toCalendarEvent($booking, $date, $viewer));
                 }
             }
         }
@@ -134,8 +132,9 @@ class BookingRepository
         return $events;
     }
 
-    private function toCalendarEvent(Booking $booking, string $date): array
+    private function toCalendarEvent(Booking $booking, string $date, ?User $viewer): array
     {
+        $canViewDetail = $viewer !== null && (new \App\Policies\BookingPolicy)->view($viewer, $booking);
         // Booking Auditorium ditandai warna ungu tersendiri (beda dari warna status
         // ruangan lain) supaya langsung terlihat di kalender tanpa perlu dibuka dulu.
         $isAuditorium = $booking->room->name === '401 / Auditorium';
@@ -148,10 +147,11 @@ class BookingRepository
         return [
             'id' => "{$booking->id}::{$date}",
             'booking_id' => $booking->id,
+            'can_view_detail' => $canViewDetail,
             'title' => $booking->title,
             'room' => $booking->room->name,
             'room_id' => $booking->room_id,
-            'user' => $booking->user->name,
+            ...($canViewDetail ? ['user' => $booking->user->name] : []),
             'start' => $date.'T'.$booking->start_time,
             'end' => $date.'T'.$booking->end_time,
             'start_time' => $booking->start_time,
@@ -164,7 +164,7 @@ class BookingRepository
             'extendedProps' => [
                 'type' => 'booking',
                 'status_label' => BookingStatus::tryFrom($booking->status)?->label() ?? $booking->status,
-                'description' => $booking->description,
+                ...($canViewDetail ? ['description' => $booking->description] : []),
                 'is_recurring' => $booking->booking_type === 'rutin',
             ],
         ];

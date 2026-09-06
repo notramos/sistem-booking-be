@@ -73,14 +73,19 @@ class BookingVisibilityTest extends TestCase
         return $user;
     }
 
-    public function test_member_calendar_cannot_override_owner_and_staff_can_see_all(): void
+    public function test_calendar_shows_all_summaries_but_only_authorized_details(): void
     {
         $request = Request::create('/api/bookings/calendar', 'GET', ['start' => '2026-09-01', 'end' => '2026-09-30', 'user_id' => 'other']);
         $request->setUserResolver(fn () => $this->user());
         $response = app(BookingController::class)->calendar($request)->getData(true);
-        $this->assertCount(3, $response['data']);
+        $this->assertCount(6, $response['data']);
         foreach ($response['data'] as $event) {
-            $this->assertStringStartsWith('owner-', $event['booking_id']);
+            $own = str_starts_with($event['booking_id'], 'owner-');
+            $this->assertSame($own, $event['can_view_detail']);
+            if (! $own) {
+                $this->assertArrayNotHasKey('description', $event['extendedProps']);
+                $this->assertArrayNotHasKey('user', $event);
+            }
         }
         $this->assertStringNotContainsString('Nama Rahasia', json_encode($response));
         foreach (['sekretariat', 'p2', 'pastor', 'it_admin'] as $role) {
@@ -130,7 +135,7 @@ class BookingVisibilityTest extends TestCase
     public function test_completed_auditorium_uses_completed_color(): void
     {
         DB::table('bookings')->where('id', 'owner-reguler')->update(['status' => 'completed']);
-        $events = app(BookingRepository::class)->getCalendarData('2026-09-01', '2026-09-30', null, 'owner');
+        $events = app(BookingRepository::class)->getCalendarData('2026-09-01', '2026-09-30', null, $this->user());
         $completed = $events->firstWhere('booking_id', 'owner-reguler');
         $active = $events->firstWhere('booking_id', 'owner-rutin');
         $this->assertSame('#64748b', $completed['backgroundColor']);
