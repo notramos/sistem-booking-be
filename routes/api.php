@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\CongregationServiceController;
 use App\Http\Controllers\Api\MaintenanceController;
+use App\Http\Controllers\Api\LingkunganController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReportController;
@@ -119,6 +120,16 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
         Route::post('room-facilities', [RoomFacilityController::class, 'store']);
         Route::put('room-facilities/{roomFacility}', [RoomFacilityController::class, 'update']);
         Route::delete('room-facilities/{roomFacility}', [RoomFacilityController::class, 'destroy']);
+
+        Route::get('wilayah/{wilayah}', [WilayahController::class, 'show']);
+        Route::post('wilayah', [WilayahController::class, 'store']);
+        Route::put('wilayah/{wilayah}', [WilayahController::class, 'update']);
+        Route::delete('wilayah/{wilayah}', [WilayahController::class, 'destroy']);
+
+        Route::get('lingkungan/{lingkungan}', [LingkunganController::class, 'show']);
+        Route::post('lingkungan', [LingkunganController::class, 'store']);
+        Route::put('lingkungan/{lingkungan}', [LingkunganController::class, 'update']);
+        Route::delete('lingkungan/{lingkungan}', [LingkunganController::class, 'destroy']);
 
         Route::apiResource('maintenance-schedules', MaintenanceController::class)->except(['show']);
 

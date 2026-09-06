@@ -24,6 +24,11 @@ class Wilayah extends Model
         return $this->hasMany(Lingkungan::class);
     }
 
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

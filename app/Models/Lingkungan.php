@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Lingkungan extends Model
 {
@@ -22,6 +23,11 @@ class Lingkungan extends Model
     public function wilayah(): BelongsTo
     {
         return $this->belongsTo(Wilayah::class);
+    }
+
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
     }
 
     public function scopeActive($query)
