@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\DTOs\BookingDTO;
 use App\DTOs\CalendarFilterDTO;
 use App\DTOs\ManualBookingDTO;
-use App\Enums\BookingStatus;
-use App\Http\Controllers\Controller;
 use App\DTOs\RecurringBookingDTO;
 use App\DTOs\RecurringPreviewDTO;
+use App\Enums\BookingStatus;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\PreviewRecurringBookingRequest;
 use App\Http\Requests\Api\StoreBookingRequest;
 use App\Http\Requests\Api\StoreManualBookingRequest;
@@ -38,7 +38,7 @@ class BookingController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $isPrivileged = $user->hasAnyRole(['p2', 'pastor', 'it_admin', 'sekretariat']);
+        $isPrivileged = $user->canViewAllBookings();
 
         $bookings = Booking::with(['user:id,name', 'room:id,name,slug'])
             ->when(! $isPrivileged, fn ($q) => $q->where('user_id', $user->id))
@@ -265,6 +265,7 @@ class BookingController extends Controller
             start: $request->start,
             end: $request->end,
             roomId: $request->room_id,
+            userId: $request->user()->canViewAllBookings() ? null : $request->user()->id,
         );
 
         $events = $this->calendarService->getEvents($dto);

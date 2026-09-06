@@ -94,7 +94,7 @@ class BookingRepository
      * kalender per tanggal. Filter rentang untuk rutin dilakukan di PHP (bukan di query)
      * karena recurring_dates cuma JSON array, bukan kolom yang bisa di-BETWEEN.
      */
-    public function getCalendarData(string $start, string $end, ?string $roomId = null): Collection
+    public function getCalendarData(string $start, string $end, ?string $roomId = null, ?string $userId = null): Collection
     {
         $statuses = [
             BookingStatus::PENDING->value,
@@ -103,6 +103,7 @@ class BookingRepository
         ];
 
         $reguler = Booking::with(['room:id,name,slug', 'user:id,name'])
+            ->when($userId !== null, fn ($q) => $q->where('user_id', $userId))
             ->where('booking_type', 'reguler')
             ->whereBetween('booking_date', [$start, $end])
             ->whereIn('status', $statuses)
@@ -110,6 +111,7 @@ class BookingRepository
             ->get();
 
         $rutin = Booking::with(['room:id,name,slug', 'user:id,name'])
+            ->when($userId !== null, fn ($q) => $q->where('user_id', $userId))
             ->where('booking_type', 'rutin')
             ->whereIn('status', $statuses)
             ->when($roomId, fn ($q) => $q->where('room_id', $roomId))
@@ -137,12 +139,11 @@ class BookingRepository
         // Booking Auditorium ditandai warna ungu tersendiri (beda dari warna status
         // ruangan lain) supaya langsung terlihat di kalender tanpa perlu dibuka dulu.
         $isAuditorium = $booking->room->name === '401 / Auditorium';
-        $color = $isAuditorium ? '#8b5cf6' : match ($booking->status) {
+        $color = $booking->status === BookingStatus::COMPLETED->value ? '#64748b' : ($isAuditorium ? '#8b5cf6' : match ($booking->status) {
             BookingStatus::PENDING->value => '#f59e0b',
             BookingStatus::APPROVED->value => '#22c55e',
-            BookingStatus::COMPLETED->value => '#6366f1',
             default => '#6b7280',
-        };
+        });
 
         return [
             'id' => "{$booking->id}::{$date}",

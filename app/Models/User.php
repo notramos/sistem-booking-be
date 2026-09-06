@@ -3,17 +3,22 @@
 namespace App\Models;
 
 use App\Enums\BookingStatus;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasUuids, HasRoles, Notifiable;
+    use HasApiTokens, HasRoles, HasUuids, Notifiable;
+
+    public function canViewAllBookings(): bool
+    {
+        return $this->hasAnyRole(['sekretariat', 'p2', 'pastor', 'it_admin']);
+    }
 
     protected $fillable = [
         'name',

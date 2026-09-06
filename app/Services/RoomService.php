@@ -10,7 +10,6 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class RoomService
 {
@@ -37,7 +36,7 @@ class RoomService
 
             $room = $this->roomRepo->create($data);
 
-            if (!empty($facilities)) {
+            if (! empty($facilities)) {
                 $room->facilities()->sync($facilities);
             }
 
@@ -157,12 +156,19 @@ class RoomService
      */
     private function mapBookedSlots(Collection $booked): array
     {
-        return $booked->map(fn ($b) => [
-            'start_time' => substr((string) $b->start_time, 0, 5),
-            'end_time' => substr((string) $b->end_time, 0, 5),
-            'title' => $b->title,
-            'status' => $b->status,
-        ])->values()->all();
+        $viewer = auth()->user();
+        $canViewAll = $viewer?->canViewAllBookings() ?? false;
+
+        return $booked->map(function ($b) use ($viewer, $canViewAll) {
+            $canView = $canViewAll || ($viewer && $viewer->id === $b->user_id);
+
+            return [
+                'start_time' => substr((string) $b->start_time, 0, 5),
+                'end_time' => substr((string) $b->end_time, 0, 5),
+                'title' => $canView ? $b->title : 'Terpakai',
+                'status' => $canView ? $b->status : null,
+            ];
+        })->values()->all();
     }
 
     /**
@@ -201,7 +207,7 @@ class RoomService
         $free = [];
         $cursor = $openMin;
         foreach ($merged as $iv) {
-            if ($iv[0] - $cursor >= $step) {
+            if ($step <= $iv[0] - $cursor) {
                 $free[] = ['start_time' => $this->fromMinutes($cursor), 'end_time' => $this->fromMinutes($iv[0])];
             }
             $cursor = max($cursor, $iv[1]);

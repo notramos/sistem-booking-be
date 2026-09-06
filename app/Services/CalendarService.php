@@ -15,15 +15,15 @@ class CalendarService
 
     public function getEvents(CalendarFilterDTO $dto): Collection
     {
-        $bookings = $this->bookingRepo->getCalendarData($dto->start, $dto->end, $dto->roomId);
+        $bookings = $this->bookingRepo->getCalendarData($dto->start, $dto->end, $dto->roomId, $dto->userId);
 
         $maintenance = MaintenanceSchedule::with('room')
             ->whereBetween('start_date', [$dto->start, $dto->end])
             ->orWhereBetween('end_date', [$dto->start, $dto->end])
             ->get()
             ->map(fn ($m) => [
-                'id' => 'maintenance-' . $m->id,
-                'title' => '🔧 ' . $m->title,
+                'id' => 'maintenance-'.$m->id,
+                'title' => '🔧 '.$m->title,
                 'room' => $m->room->name,
                 'start' => $m->start_date,
                 'end' => $m->end_date,

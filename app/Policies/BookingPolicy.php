@@ -10,10 +10,7 @@ class BookingPolicy
 {
     public function view(User $user, Booking $booking): bool
     {
-        // Semua user login boleh melihat detail booking siapa pun (kalender sudah
-        // menampilkan booking semua orang) — yang dibatasi cuma AKSI-nya (lihat
-        // update/cancel/approve di bawah), bukan visibilitas.
-        return true;
+        return $user->id === $booking->user_id || $user->canViewAllBookings();
     }
 
     public function create(User $user): bool

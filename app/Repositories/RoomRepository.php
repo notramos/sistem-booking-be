@@ -159,7 +159,7 @@ class RoomRepository
             ->where('booking_date', $date)
             ->whereIn('status', [BookingStatus::PENDING->value, BookingStatus::APPROVED->value])
             ->orderBy('start_time')
-            ->get(['id', 'title', 'start_time', 'end_time', 'status']);
+            ->get(['id', 'user_id', 'title', 'start_time', 'end_time', 'status']);
     }
 
     /**
@@ -180,7 +180,7 @@ class RoomRepository
             ->where('booking_date', $date)
             ->whereIn('status', [BookingStatus::PENDING->value, BookingStatus::APPROVED->value])
             ->orderBy('start_time')
-            ->get(['id', 'room_id', 'title', 'start_time', 'end_time', 'status'])
+            ->get(['id', 'user_id', 'room_id', 'title', 'start_time', 'end_time', 'status'])
             ->groupBy('room_id');
     }
 }

@@ -8,5 +8,6 @@ class CalendarFilterDTO
         public readonly string $start,
         public readonly string $end,
         public readonly ?string $roomId = null,
+        public readonly ?string $userId = null,
     ) {}
 }

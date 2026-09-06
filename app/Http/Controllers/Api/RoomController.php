@@ -66,6 +66,7 @@ class RoomController extends Controller
         $endDate = $request->get('end', now()->endOfMonth()->toDateString());
 
         $bookings = $room->activeBookings()
+            ->when(! $request->user()->canViewAllBookings(), fn ($q) => $q->where('user_id', $request->user()->id))
             ->whereBetween('booking_date', [$startDate, $endDate])
             ->get(['id', 'title', 'booking_date', 'start_time', 'end_time', 'status']);
 
