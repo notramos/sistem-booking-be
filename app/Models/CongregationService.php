@@ -16,7 +16,7 @@ class CongregationService extends Model
         'phone', 'mobile_phone', 'neighborhood', 'region', 'parish',
         'father_name', 'father_religion', 'mother_name', 'mother_religion',
         'school', 'grade', 'occupation', 'family_card_number',
-        'service_date', 'description', 'status', 'notes', 'dynamic_fields',
+        'service_date', 'description', 'status', 'notes', 'dynamic_fields', 'received_at',
     ];
 
     protected function casts(): array
@@ -25,6 +25,7 @@ class CongregationService extends Model
             'service_date' => 'date:Y-m-d',
             'birth_date' => 'date:Y-m-d',
             'dynamic_fields' => 'array',
+            'received_at' => 'datetime',
         ];
     }
 

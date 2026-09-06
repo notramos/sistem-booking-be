@@ -15,6 +15,7 @@ use App\Notifications\CongregationServiceCreated;
 use App\Services\AuditService;
 use App\Services\NotificationService;
 use App\Support\Pagination;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
@@ -143,6 +144,9 @@ class CongregationServiceController extends Controller
             'service_date' => $validated['service_date'] ?? null,
             'description' => $validated['description'] ?? null,
             'status' => $validated['status'],
+            'received_at' => isset($validated['received_at'])
+                ? Carbon::parse($validated['received_at'])->setTimezone(config('app.timezone'))
+                : now(),
             'dynamic_fields' => $validated['dynamic_fields'] ?? [],
         ]);
 

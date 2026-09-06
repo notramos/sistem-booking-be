@@ -4,11 +4,11 @@ use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BookingController;
+use App\Http\Controllers\Api\CongregationServiceController;
 use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReportController;
-use App\Http\Controllers\Api\CongregationServiceController;
 use App\Http\Controllers\Api\RoomCategoryController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\RoomFacilityController;
@@ -95,6 +95,8 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
 
     // Reports (sekretariat & admin)
     Route::get('reports/bookings', [ReportController::class, 'bookings'])->middleware('can:reports.view');
+    Route::get('reports/intensi-misa', [ReportController::class, 'intensiMisa'])->middleware('can:reports.view');
+    Route::get('reports/intensi-misa/excel', [ReportController::class, 'exportIntensiMisa'])->middleware('can:reports.export');
     Route::get('reports/room-utilization', [ReportController::class, 'roomUtilization'])->middleware('can:reports.view');
     Route::get('reports/user-activity', [ReportController::class, 'userActivity'])->middleware('can:reports.view');
     Route::get('reports/monthly', [ReportController::class, 'monthly'])->middleware('can:reports.view');

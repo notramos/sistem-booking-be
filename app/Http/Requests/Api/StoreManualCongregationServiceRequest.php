@@ -43,6 +43,7 @@ class StoreManualCongregationServiceRequest extends FormRequest
             'service_date' => 'nullable|date',
             'description' => 'nullable|string|max:2000',
             'dynamic_fields' => 'nullable|array',
+            'received_at' => 'nullable|date|before_or_equal:now',
             // Status di-input langsung oleh staf — dikecualikan dari alur pending default,
             // sama seperti StoreManualBookingRequest, supaya bisa langsung dicatat "approved"
             // untuk entri historis/backfill.
@@ -76,6 +77,7 @@ class StoreManualCongregationServiceRequest extends FormRequest
             'family_card_number' => 'nomor KK',
             'service_date' => 'tanggal pelayanan',
             'description' => 'keterangan',
+            'received_at' => 'waktu diterima Sekretariat',
         ];
     }
 }

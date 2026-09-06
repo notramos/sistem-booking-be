@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exports\IntensiMisaExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\ExportPdfReportRequest;
+use App\Http\Requests\Api\IntensiMisaReportRequest;
 use App\Http\Requests\Api\MonthlyReportRequest;
 use App\Http\Response\ApiResponse;
+use App\Services\IntensiMisaReportService;
 use App\Services\ReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +21,19 @@ class ReportController extends Controller
     use ApiResponse;
 
     public function __construct(private ReportService $reportService) {}
+
+    public function intensiMisa(IntensiMisaReportRequest $request, IntensiMisaReportService $report): JsonResponse
+    {
+        $data = $report->query($request->validated())->paginate(25);
+        $data->through(fn ($service) => $report->row($service));
+
+        return $this->paginated($data);
+    }
+
+    public function exportIntensiMisa(IntensiMisaReportRequest $request)
+    {
+        return Excel::download(new IntensiMisaExport($request->validated()), 'intensi-misa-'.now()->format('YmdHis').'.xlsx');
+    }
 
     public function bookings(Request $request): JsonResponse
     {

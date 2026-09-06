@@ -40,6 +40,7 @@ class CongregationServiceResource extends JsonResource
             'dynamic_fields' => $this->dynamic_fields,
             'user' => new UserResource($this->whenLoaded('user')),
             'created_at' => $this->created_at,
+            'received_at' => $this->received_at,
         ];
     }
 }
