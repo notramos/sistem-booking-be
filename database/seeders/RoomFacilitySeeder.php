@@ -10,27 +10,23 @@ class RoomFacilitySeeder extends Seeder
     public function run(): void
     {
         $facilities = [
-            ['name' => 'Proyektor / LCD', 'icon' => 'projector'],
+            ['name' => 'AC', 'icon' => 'ac'],
+            ['name' => 'LCD TV', 'icon' => 'tv'],
+            ['name' => 'Projector', 'icon' => 'projector'],
             ['name' => 'Sound System', 'icon' => 'speaker'],
-            ['name' => 'AC / Pendingin', 'icon' => 'ac'],
-            ['name' => 'Whiteboard', 'icon' => 'whiteboard'],
-            ['name' => 'Meja & Kursi', 'icon' => 'chair'],
-            ['name' => 'Koneksi Internet', 'icon' => 'wifi'],
-            ['name' => 'Panggung', 'icon' => 'stage'],
-            ['name' => 'Alat Musik', 'icon' => 'music'],
-            ['name' => 'Soundproof', 'icon' => 'soundproof'],
-            ['name' => 'Dapur / Pantry', 'icon' => 'kitchen'],
-            ['name' => 'Toilet', 'icon' => 'toilet'],
-            ['name' => 'Parkir Luas', 'icon' => 'parking'],
-            ['name' => 'Akses Difabel', 'icon' => 'accessible'],
-            ['name' => 'Kipas Angin', 'icon' => 'fan'],
+            ['name' => 'Kursi Sandar', 'icon' => 'chair'],
+            ['name' => 'Kursi Kuliah', 'icon' => 'chair'],
+            ['name' => 'Papan Tulis', 'icon' => 'whiteboard'],
         ];
 
         foreach ($facilities as $fac) {
-            RoomFacility::firstOrCreate(
+            RoomFacility::updateOrCreate(
                 ['name' => $fac['name']],
-                $fac
+                [...$fac, 'is_active' => true]
             );
         }
+
+        RoomFacility::whereNotIn('name', array_column($facilities, 'name'))
+            ->update(['is_active' => false]);
     }
 }

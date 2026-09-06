@@ -40,7 +40,7 @@ class BookingController extends Controller
         $user = $request->user();
         $isPrivileged = $user->canViewAllBookings();
 
-        $bookings = Booking::with(['user:id,name', 'room:id,name,slug'])
+        $bookings = Booking::with(['user:id,name', 'room:id,name,patron_name,slug'])
             ->when(! $isPrivileged, fn ($q) => $q->where('user_id', $user->id))
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->when($request->room_id, fn ($q, $r) => $q->where('room_id', $r))
@@ -72,7 +72,7 @@ class BookingController extends Controller
         $booking = $this->bookingService->create($dto);
 
         return $this->created(
-            new BookingResource($booking->load(['room:id,name,slug', 'user:id,name'])),
+            new BookingResource($booking->load(['room:id,name,patron_name,slug', 'user:id,name'])),
             'Booking berhasil dibuat dan menunggu persetujuan'
         );
     }
@@ -97,7 +97,7 @@ class BookingController extends Controller
         $booking = $this->bookingService->createManual($dto);
 
         return $this->created(
-            new BookingResource($booking->load(['room:id,name,slug', 'user:id,name'])),
+            new BookingResource($booking->load(['room:id,name,patron_name,slug', 'user:id,name'])),
             'Booking manual berhasil ditambahkan'
         );
     }
@@ -138,7 +138,7 @@ class BookingController extends Controller
         $result = $this->bookingService->createRecurring($dto);
 
         return $this->created([
-            'booking' => new BookingResource($result->booking->load(['room:id,name,slug', 'user:id,name'])),
+            'booking' => new BookingResource($result->booking->load(['room:id,name,patron_name,slug', 'user:id,name'])),
             'skipped' => $result->skipped,
             'skipped_count' => count($result->skipped),
         ], 'Jadwal rutin berhasil diajukan');

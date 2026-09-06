@@ -30,7 +30,7 @@ class BookingForwardedToAdmin extends Notification
             ->greeting('Halo ' . $notifiable->name . ',')
             ->line('Booking Anda sudah disetujui Sekretariat dan sekarang menunggu persetujuan final dari Admin:')
             ->line('Peminjam: ' . $this->booking->title)
-            ->line('Ruangan: ' . $this->booking->room->name)
+            ->line('Ruangan: ' . $this->booking->room->display_label)
             ->line('Tanggal: ' . $this->booking->booking_date->format('d/m/Y'))
             ->line('Waktu: ' . $this->booking->start_time . ' - ' . $this->booking->end_time)
             ->action('Lihat Booking', url('/booking/' . $this->booking->id))
@@ -42,7 +42,7 @@ class BookingForwardedToAdmin extends Notification
         return [
             'booking_id' => $this->booking->id,
             'title' => $this->booking->title,
-            'room_name' => $this->booking->room->name,
+            'room_name' => $this->booking->room->display_label,
             'booking_date' => $this->booking->booking_date->format('Y-m-d'),
             'start_time' => $this->booking->start_time,
             'end_time' => $this->booking->end_time,

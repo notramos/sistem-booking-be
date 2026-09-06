@@ -21,7 +21,7 @@ class MaintenanceController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $schedules = MaintenanceSchedule::with(['room:id,name', 'creator:id,name'])
+        $schedules = MaintenanceSchedule::with(['room:id,name,patron_name', 'creator:id,name'])
             ->when($request->room_id, fn ($q, $r) => $q->where('room_id', $r))
             ->when($request->start_date, fn ($q, $d) => $q->where('end_date', '>=', $d))
             ->when($request->end_date, fn ($q, $d) => $q->where('start_date', '<=', $d))
@@ -39,7 +39,7 @@ class MaintenanceController extends Controller
         $this->roomRepo->clearAvailabilityCache();
 
         return $this->created(
-            new MaintenanceScheduleResource($schedule->load(['room:id,name', 'creator:id,name'])),
+            new MaintenanceScheduleResource($schedule->load(['room:id,name,patron_name', 'creator:id,name'])),
             'Jadwal perbaikan berhasil dibuat'
         );
     }
@@ -51,7 +51,7 @@ class MaintenanceController extends Controller
         $this->roomRepo->clearAvailabilityCache();
 
         return $this->success(
-            new MaintenanceScheduleResource($schedule->load(['room:id,name', 'creator:id,name'])),
+            new MaintenanceScheduleResource($schedule->load(['room:id,name,patron_name', 'creator:id,name'])),
             'Jadwal perbaikan berhasil diperbarui'
         );
     }

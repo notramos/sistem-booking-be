@@ -22,7 +22,7 @@ class ApprovalController extends Controller
         $booking = $this->approvalService->startReview($bookingId);
 
         return $this->success(
-            new BookingResource($booking->load(['user:id,name,email', 'room:id,name'])),
+            new BookingResource($booking->load(['user:id,name,email', 'room:id,name,patron_name'])),
             'Review dimulai'
         );
     }
@@ -36,7 +36,7 @@ class ApprovalController extends Controller
         );
 
         return $this->success(
-            new BookingResource($booking->load(['user:id,name,email', 'room:id,name'])),
+            new BookingResource($booking->load(['user:id,name,email', 'room:id,name,patron_name'])),
             'Booking berhasil disetujui'
         );
     }
@@ -50,7 +50,7 @@ class ApprovalController extends Controller
         );
 
         return $this->success(
-            new BookingResource($booking->load(['user:id,name,email', 'room:id,name'])),
+            new BookingResource($booking->load(['user:id,name,email', 'room:id,name,patron_name'])),
             'Booking ditolak'
         );
     }

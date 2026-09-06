@@ -11,7 +11,7 @@ class ReportService
 {
     public function bookingReport(?string $startDate = null, ?string $endDate = null, ?string $status = null)
     {
-        $query = Booking::with(['user:id,name', 'room:id,name']);
+        $query = Booking::with(['user:id,name', 'room:id,name,patron_name']);
 
         if ($startDate) $query->where('booking_date', '>=', $startDate);
         if ($endDate) $query->where('booking_date', '<=', $endDate);
@@ -42,7 +42,8 @@ class ReportService
 
             return [
                 'room_id' => $room->id,
-                'room_name' => $room->name,
+                'room_name' => $room->display_name,
+                'room_number' => $room->name,
                 'capacity' => $room->capacity,
                 'total_bookings' => $room->total_bookings,
                 'booked_minutes' => $bookedMinutes,

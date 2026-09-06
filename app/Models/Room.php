@@ -97,8 +97,21 @@ class Room extends Model
     {
         return $query->where(function ($q) use ($term) {
             $q->where('name', 'ilike', "%{$term}%")
+                ->orWhere('patron_name', 'ilike', "%{$term}%")
                 ->orWhere('building', 'ilike', "%{$term}%")
                 ->orWhere('description', 'ilike', "%{$term}%");
         });
+    }
+
+    /** Nama ruangan yang ditonjolkan ke pengguna (nama pelindung). */
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->patron_name ?: $this->name;
+    }
+
+    /** Nama lengkap untuk pilihan ringkas, notifikasi, dan laporan. */
+    public function getDisplayLabelAttribute(): string
+    {
+        return $this->patron_name ? "{$this->patron_name} · {$this->name}" : $this->name;
     }
 }

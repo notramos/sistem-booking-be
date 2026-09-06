@@ -25,7 +25,7 @@ class BookingRejected extends Notification
             ->greeting('Halo ' . $notifiable->name . ',')
             ->line('Booking Anda telah ditolak:')
             ->line('Judul: ' . $this->booking->title)
-            ->line('Ruangan: ' . $this->booking->room->name)
+            ->line('Ruangan: ' . $this->booking->room->display_label)
             ->line('Alasan: ' . $this->booking->reject_reason)
             ->action('Lihat Detail', url('/my-bookings'))
             ->line('Silakan hubungi sekretariat untuk informasi lebih lanjut.');
@@ -36,7 +36,7 @@ class BookingRejected extends Notification
         return [
             'booking_id' => $this->booking->id,
             'title' => $this->booking->title,
-            'room_name' => $this->booking->room->name,
+            'room_name' => $this->booking->room->display_label,
             'booking_date' => $this->booking->booking_date->format('Y-m-d'),
             'start_time' => $this->booking->start_time,
             'end_time' => $this->booking->end_time,

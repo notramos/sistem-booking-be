@@ -74,7 +74,7 @@ class BookingRepository
 
     public function getUserBookings(string $userId, ?string $status = null, int $page = 1, ?string $search = null, int $perPage = 10): LengthAwarePaginator
     {
-        $query = Booking::with(['room:id,name,slug', 'approvals'])
+        $query = Booking::with(['room:id,name,patron_name,slug', 'approvals'])
             ->where('user_id', $userId)
             ->orderBy('created_at', 'desc');
 
@@ -102,14 +102,14 @@ class BookingRepository
             BookingStatus::COMPLETED->value,
         ];
 
-        $reguler = Booking::with(['room:id,name,slug', 'user:id,name'])
+        $reguler = Booking::with(['room:id,name,patron_name,slug', 'user:id,name'])
             ->where('booking_type', 'reguler')
             ->whereBetween('booking_date', [$start, $end])
             ->whereIn('status', $statuses)
             ->when($roomId, fn ($q) => $q->where('room_id', $roomId))
             ->get();
 
-        $rutin = Booking::with(['room:id,name,slug', 'user:id,name'])
+        $rutin = Booking::with(['room:id,name,patron_name,slug', 'user:id,name'])
             ->where('booking_type', 'rutin')
             ->whereIn('status', $statuses)
             ->when($roomId, fn ($q) => $q->where('room_id', $roomId))
@@ -137,7 +137,8 @@ class BookingRepository
         $canViewDetail = $viewer !== null && (new \App\Policies\BookingPolicy)->view($viewer, $booking);
         // Booking Auditorium ditandai warna ungu tersendiri (beda dari warna status
         // ruangan lain) supaya langsung terlihat di kalender tanpa perlu dibuka dulu.
-        $isAuditorium = $booking->room->name === '401 / Auditorium';
+        $isAuditorium = $booking->room->name === 'Auditorium'
+            || $booking->room->name === '401 / Auditorium';
         $color = $booking->status === BookingStatus::COMPLETED->value ? '#64748b' : ($isAuditorium ? '#8b5cf6' : match ($booking->status) {
             BookingStatus::PENDING->value => '#f59e0b',
             BookingStatus::APPROVED->value => '#22c55e',
@@ -149,7 +150,7 @@ class BookingRepository
             'booking_id' => $booking->id,
             'can_view_detail' => $canViewDetail,
             'title' => $booking->title,
-            'room' => $booking->room->name,
+            'room' => $booking->room->display_label,
             'room_id' => $booking->room_id,
             ...($canViewDetail ? ['user' => $booking->user->name] : []),
             'start' => $date.'T'.$booking->start_time,
@@ -177,7 +178,7 @@ class BookingRepository
      */
     public function getPendingBookings(User $user): LengthAwarePaginator
     {
-        $query = Booking::with(['user:id,name,department', 'room:id,name,slug'])
+        $query = Booking::with(['user:id,name,department', 'room:id,name,patron_name,slug'])
             ->orderBy('created_at', 'asc');
 
         if ($user->hasAnyRole(['p2', 'pastor', 'it_admin'])) {

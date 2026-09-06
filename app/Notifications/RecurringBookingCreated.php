@@ -29,7 +29,7 @@ class RecurringBookingCreated extends Notification
             ->greeting('Halo ' . $notifiable->name . ',')
             ->line('Ada pengajuan booking rutin baru yang perlu persetujuan:')
             ->line('Judul: ' . $this->booking->title)
-            ->line('Ruangan: ' . $this->booking->room->name)
+            ->line('Ruangan: ' . $this->booking->room->display_label)
             ->line('Jumlah tanggal: ' . count($dates) . " (dari {$first} s/d {$last})")
             ->line('Waktu: ' . $this->booking->start_time . ' - ' . $this->booking->end_time)
             ->line('Pemesan: ' . $this->booking->user->name);
@@ -48,7 +48,7 @@ class RecurringBookingCreated extends Notification
         return [
             'booking_id' => $this->booking->id,
             'title' => $this->booking->title,
-            'room_name' => $this->booking->room->name,
+            'room_name' => $this->booking->room->display_label,
             'booking_date' => $dates[0] ?? $this->booking->booking_date->format('Y-m-d'),
             'end_booking_date' => $dates[count($dates) - 1] ?? null,
             'occurrence_count' => count($dates),

@@ -40,7 +40,7 @@
                 <td>{{ $index + 1 }}</td>
                 <td>{{ $booking->title }}</td>
                 <td>{{ $booking->description ?? '-' }}</td>
-                <td>{{ $booking->room->name ?? '-' }}</td>
+                <td>{{ $booking->room->display_label ?? '-' }}</td>
                 <td>{{ $booking->user->name ?? '-' }}</td>
                 <td>{{ $booking->booking_date }}</td>
                 <td>{{ $booking->start_time }} - {{ $booking->end_time }}</td>

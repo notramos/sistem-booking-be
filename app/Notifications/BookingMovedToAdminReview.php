@@ -25,7 +25,7 @@ class BookingMovedToAdminReview extends Notification
             ->greeting('Halo ' . $notifiable->name . ',')
             ->line('Booking berikut sudah disetujui sekretariat dan menunggu persetujuan final:')
             ->line('Judul: ' . $this->booking->title)
-            ->line('Ruangan: ' . $this->booking->room->name)
+            ->line('Ruangan: ' . $this->booking->room->display_label)
             ->line('Tanggal: ' . $this->booking->booking_date->format('d/m/Y'))
             ->line('Waktu: ' . $this->booking->start_time . ' - ' . $this->booking->end_time)
             ->line('Pemesan: ' . $this->booking->user->name)
@@ -38,7 +38,7 @@ class BookingMovedToAdminReview extends Notification
         return [
             'booking_id' => $this->booking->id,
             'title' => $this->booking->title,
-            'room_name' => $this->booking->room->name,
+            'room_name' => $this->booking->room->display_label,
             'booking_date' => $this->booking->booking_date->format('Y-m-d'),
             'start_time' => $this->booking->start_time,
             'end_time' => $this->booking->end_time,

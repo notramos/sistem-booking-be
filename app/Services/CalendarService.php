@@ -24,7 +24,7 @@ class CalendarService
             ->map(fn ($m) => [
                 'id' => 'maintenance-'.$m->id,
                 'title' => '🔧 '.$m->title,
-                'room' => $m->room->name,
+                'room' => $m->room->display_label,
                 'start' => $m->start_date,
                 'end' => $m->end_date,
                 'allDay' => $m->is_all_day,

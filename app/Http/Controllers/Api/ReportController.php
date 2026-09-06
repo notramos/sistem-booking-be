@@ -103,7 +103,7 @@ class ReportController extends Controller
                         return $this->data->map(fn ($b) => [
                             'Peminjam' => $b->title,
                             'Kegiatan' => $b->description ?? '-',
-                            'Ruangan' => $b->room->name ?? '-',
+                            'Ruangan' => $b->room->display_label ?? '-',
                             'Pemesan' => $b->user->name ?? '-',
                             'Tanggal' => $b->booking_date,
                             'Mulai' => $b->start_time,
