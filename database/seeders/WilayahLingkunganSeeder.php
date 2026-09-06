@@ -22,13 +22,13 @@ class WilayahLingkunganSeeder extends Seeder
      * @var array<string, list<array{name: string, area: string|null}>>
      */
     private array $data = [
-        'PUP Barat' => [
+        'St. Anastasia' => [
             ['name' => 'St. Anastasia 1', 'area' => 'PUP Barat'],
             ['name' => 'St. Anastasia 2', 'area' => 'PUP Barat'],
             ['name' => 'St. Anastasia 3', 'area' => 'PUP Barat'],
             ['name' => 'St. Anastasia 4', 'area' => 'PUP Barat'],
         ],
-        'PUP Timur' => [
+        'St. Fr. Asisi' => [
             ['name' => 'St. Fr. Asisi 1', 'area' => 'PUP Timur'],
             ['name' => 'St. Fr. Asisi 2', 'area' => 'PUP Timur'],
             ['name' => 'St. Fr. Asisi 3', 'area' => 'PUP Timur'],
@@ -36,64 +36,64 @@ class WilayahLingkunganSeeder extends Seeder
             ['name' => 'St. Fr. Asisi 5', 'area' => 'PUP Timur'],
             ['name' => 'St. Fr. Asisi 6', 'area' => 'PUP Timur'],
         ],
-        'THB Timur' => [
+        'St. Petrus' => [
             ['name' => 'St. Petrus 1', 'area' => 'THB Timur'],
             ['name' => 'St. Petrus 2', 'area' => 'THB Timur'],
             ['name' => 'St. Petrus 3', 'area' => 'THB Timur'],
             ['name' => 'St. Petrus 4', 'area' => 'THB Timur'],
         ],
-        'Tarumajaya Selatan' => [
+        'St. Alfonsus' => [
             ['name' => 'St. Alfonsus 1', 'area' => 'Vila Mutiara Gading'],
             ['name' => 'St. Alfonsus 2', 'area' => 'Alindra'],
             ['name' => 'St. Alfonsus 3', 'area' => 'Puri Residence'],
         ],
-        'THB Barat' => [
+        'St. Aloysius' => [
             ['name' => 'St. Aloysius 1', 'area' => 'THB Barat'],
             ['name' => 'St. Aloysius 2', 'area' => 'THB Barat'],
             ['name' => 'St. Aloysius 3', 'area' => 'THB Barat'],
             ['name' => 'St. Aloysius 4', 'area' => 'THB Barat'],
         ],
-        'Harapan Indah Selatan' => [
+        'St. Fr. Xaverius' => [
             ['name' => 'St. Fr. Xaverius 1', 'area' => 'Harapan Indah Selatan'],
             ['name' => 'St. Fr. Xaverius 2', 'area' => 'Harapan Indah Selatan'],
             ['name' => 'St. Fr. Xaverius 3', 'area' => 'Harapan Indah Selatan'],
             ['name' => 'St. Fr. Xaverius 4', 'area' => 'Harapan Indah Selatan'],
         ],
-        'Pejuang Jaya' => [
+        'St. Regina Pacis' => [
             ['name' => 'St. Regina Pacis 1', 'area' => 'Pejuang Jaya'],
             ['name' => 'St. Regina Pacis 2', 'area' => 'Pejuang Jaya'],
             ['name' => 'St. Regina Pacis 3', 'area' => 'Pejuang Jaya'],
         ],
-        'Tarumajaya Utara' => [
+        'St. Thomas' => [
             ['name' => 'St. Thomas 1', 'area' => 'Rakyat Setia'],
             ['name' => 'St. Thomas 2', 'area' => 'Segara Jaya'],
         ],
-        'Bulevar Hijau' => [
+        'St. Andreas' => [
             ['name' => 'St. Andreas 1', 'area' => 'Bulevar Hijau'],
             ['name' => 'St. Andreas 2', 'area' => 'Bulevar Hijau'],
             ['name' => 'St. Andreas 3', 'area' => 'Bulevar Hijau'],
             ['name' => 'St. Andreas 4', 'area' => 'Griya Harapan Permai'],
         ],
-        'Harapan Indah 2' => [
+        'St. Felisitas' => [
             ['name' => 'St. Felisitas 1', 'area' => 'Tmn Sari & Asia Tropis'],
             ['name' => 'St. Felisitas 2', 'area' => 'Tmn Puspa'],
             ['name' => 'St. Felisitas 3', 'area' => 'Aralia'],
             ['name' => 'St. Felisitas 4', 'area' => 'Harmoni'],
             ['name' => 'St. Felisitas 5', 'area' => 'Ifolia'],
         ],
-        'Harapan Indah Timur' => [
+        'St. Theresia' => [
             ['name' => 'St. Theresia 1', 'area' => 'Harapan Indah Timur'],
             ['name' => 'St. Theresia 2', 'area' => 'Harapan Indah Timur'],
             ['name' => 'St. Theresia 3', 'area' => 'Harapan Indah Timur'],
             ['name' => 'St. Theresia 4', 'area' => 'Harapan Indah Timur'],
             ['name' => 'St. Theresia 5', 'area' => 'Harapan Indah Timur'],
         ],
-        'Mutiara Gading City' => [
+        'St. Maria Fatima' => [
             ['name' => 'St. Maria Fatima 1', 'area' => 'MGC Babelan'],
             ['name' => 'St. Maria Fatima 2', 'area' => 'MGC Tarumajaya'],
             ['name' => 'St. Maria Fatima 3', 'area' => 'Green Ara'],
         ],
-        'Harapan Indah Barat' => [
+        'St. Arcadius' => [
             ['name' => 'St. Arcadius 1', 'area' => 'Harapan Indah Barat'],
             ['name' => 'St. Arcadius 2', 'area' => 'Harapan Indah Barat'],
             ['name' => 'St. Arcadius 3', 'area' => 'Harapan Indah Barat'],
@@ -101,18 +101,18 @@ class WilayahLingkunganSeeder extends Seeder
             ['name' => 'St. Arcadius 5', 'area' => 'Harapan Indah Barat'],
             ['name' => 'St. Arcadius 6', 'area' => 'Harapan Indah Barat'],
         ],
-        'PUP Sektor 5' => [
+        'St. Ign. Loyola' => [
             ['name' => 'St. Ign. Loyola 1', 'area' => 'PUP Sektor 5'],
             ['name' => 'St. Ign. Loyola 2', 'area' => 'PUP Sektor 5'],
             ['name' => 'St. Ign. Loyola 3', 'area' => 'PUP Sektor 5'],
         ],
-        'Pejuang Kaliabang' => [
+        'St. Yohanes' => [
             ['name' => 'St. Yohanes 1', 'area' => 'Pejuang Pratama'],
             ['name' => 'St. Yohanes 2', 'area' => 'Pondok Sani'],
             ['name' => 'St. Yohanes 3', 'area' => 'Duta Bumi'],
             ['name' => 'St. Yohanes 4', 'area' => 'Permata Harapa Baru'],
         ],
-        'Babelan' => [
+        'St. Agustinus' => [
             ['name' => 'St. Agustinus 1', 'area' => 'Kedaung'],
             ['name' => 'St. Agustinus 2', 'area' => 'Pulo Timaha'],
             ['name' => 'St. Agustinus 3', 'area' => 'Wahana'],
