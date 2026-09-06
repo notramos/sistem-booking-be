@@ -54,7 +54,7 @@ class WhatsAppOtpService
             ->asForm()
             ->post(self::FONNTE_ENDPOINT, [
                 'target' => $target,
-                'message' => "Kode verifikasi pendaftaran AlbertusKu Anda: {$code}\n\nBerlaku 15 menit. Jangan bagikan kode ini ke siapa pun.",
+                'message' => "Kode verifikasi pendaftaran AlbertusKU Anda: {$code}\n\nBerlaku 15 menit. Jangan bagikan kode ini ke siapa pun.",
             ]);
 
         if ($response->failed()) {
