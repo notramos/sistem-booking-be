@@ -33,7 +33,7 @@ class UserRepository
 
     public function paginatedList(array $filters = []): LengthAwarePaginator
     {
-        $query = User::query();
+        $query = User::query()->with(['roles', 'wilayah:id,name', 'lingkungan:id,wilayah_id,name,area']);
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
@@ -45,7 +45,11 @@ class UserRepository
         }
 
         if (isset($filters['is_active'])) {
-            $query->where('is_active', $filters['is_active']);
+            $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOL));
+        }
+
+        if (! empty($filters['role'])) {
+            $query->whereHas('roles', fn ($q) => $q->where('name', $filters['role']));
         }
 
         $sortBy = $filters['sort_by'] ?? 'created_at';

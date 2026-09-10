@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateUserRequest extends FormRequest
 {
@@ -21,7 +22,16 @@ class UpdateUserRequest extends FormRequest
             'position' => 'nullable|string|max:100',
             'nip' => 'nullable|string|max:50|unique:users,nip,'.$this->route('user'),
             'is_active' => 'boolean',
-            'role' => 'sometimes|in:admin,sekretariat,jemaat',
+            'role' => ['sometimes', Rule::in(['umat', 'sekretariat', 'p2', 'pastor', 'it_admin'])],
+            'wilayah_id' => ['nullable', 'uuid', 'exists:wilayah,id'],
+            'lingkungan_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('lingkungan', 'id')->where(
+                    fn ($query) => $query->where('wilayah_id', $this->input('wilayah_id'))
+                ),
+            ],
+            'parish' => 'nullable|string|max:255',
         ];
     }
 
@@ -36,6 +46,9 @@ class UpdateUserRequest extends FormRequest
             'nip' => 'NIP',
             'is_active' => 'status aktif',
             'role' => 'peran',
+            'wilayah_id' => 'wilayah',
+            'lingkungan_id' => 'lingkungan',
+            'parish' => 'paroki',
         ];
     }
 }

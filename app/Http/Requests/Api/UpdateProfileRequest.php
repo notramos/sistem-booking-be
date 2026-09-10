@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateProfileRequest extends FormRequest
 {
@@ -18,6 +19,15 @@ class UpdateProfileRequest extends FormRequest
             'phone' => 'nullable|string|max:50',
             'department' => 'nullable|string|max:100',
             'position' => 'nullable|string|max:100',
+            'wilayah_id' => ['nullable', 'uuid', 'exists:wilayah,id'],
+            'lingkungan_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('lingkungan', 'id')->where(
+                    fn ($query) => $query->where('wilayah_id', $this->input('wilayah_id'))
+                ),
+            ],
+            'parish' => 'nullable|string|max:255',
         ];
     }
 
@@ -28,6 +38,9 @@ class UpdateProfileRequest extends FormRequest
             'phone' => 'nomor telepon',
             'department' => 'departemen',
             'position' => 'jabatan',
+            'wilayah_id' => 'wilayah',
+            'lingkungan_id' => 'lingkungan',
+            'parish' => 'paroki',
         ];
     }
 }

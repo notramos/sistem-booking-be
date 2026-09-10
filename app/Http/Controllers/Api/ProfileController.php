@@ -18,7 +18,7 @@ class ProfileController extends Controller
 
     public function show(): JsonResponse
     {
-        return $this->success(new UserResource(auth()->user()->load('roles')));
+        return $this->success(new UserResource(auth()->user()->load(['roles', 'wilayah', 'lingkungan'])));
     }
 
     public function update(UpdateProfileRequest $request): JsonResponse
@@ -26,7 +26,7 @@ class ProfileController extends Controller
         $user = auth()->user();
         $user->update($request->validated());
 
-        return $this->success(new UserResource($user), 'Profil berhasil diperbarui');
+        return $this->success(new UserResource($user->load(['roles', 'wilayah', 'lingkungan'])), 'Profil berhasil diperbarui');
     }
 
     public function changePassword(ChangePasswordRequest $request): JsonResponse

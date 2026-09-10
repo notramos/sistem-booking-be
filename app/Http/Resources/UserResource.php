@@ -26,6 +26,18 @@ class UserResource extends JsonResource
             'position' => $this->when(array_key_exists('position', $loaded), $this->position),
             'nip' => $this->when(array_key_exists('nip', $loaded), $this->nip),
             'is_active' => $this->when(array_key_exists('is_active', $loaded), $this->is_active),
+            'wilayah_id' => $this->when(array_key_exists('wilayah_id', $loaded), $this->wilayah_id),
+            'lingkungan_id' => $this->when(array_key_exists('lingkungan_id', $loaded), $this->lingkungan_id),
+            'parish' => $this->when(array_key_exists('parish', $loaded), $this->parish),
+            'wilayah' => $this->whenLoaded('wilayah', fn () => $this->wilayah ? [
+                'id' => $this->wilayah->id,
+                'name' => $this->wilayah->name,
+            ] : null),
+            'lingkungan' => $this->whenLoaded('lingkungan', fn () => $this->lingkungan ? [
+                'id' => $this->lingkungan->id,
+                'name' => $this->lingkungan->name,
+                'area' => $this->lingkungan->area,
+            ] : null),
             'roles' => $this->whenLoaded('roles', fn () => $this->roles->map(fn ($role) => [
                 'id' => $role->id,
                 'name' => $role->name,

@@ -34,12 +34,12 @@ class UserController extends Controller
         $user = $this->userRepo->create(collect($validated)->except('role')->toArray());
         $user->assignRole($validated['role']);
 
-        return $this->created(new UserResource($user->load('roles')), 'User berhasil dibuat');
+        return $this->created(new UserResource($user->load(['roles', 'wilayah', 'lingkungan'])), 'User berhasil dibuat');
     }
 
     public function show(string $id): JsonResponse
     {
-        $user = User::with('roles.permissions')->findOrFail($id);
+        $user = User::with(['roles.permissions', 'wilayah', 'lingkungan'])->findOrFail($id);
 
         return $this->success(new UserResource($user));
     }
@@ -56,11 +56,12 @@ class UserController extends Controller
             $user->syncRoles([$role]);
         }
 
-        return $this->success(new UserResource($user->load('roles')), 'User berhasil diperbarui');
+        return $this->success(new UserResource($user->load(['roles', 'wilayah', 'lingkungan'])), 'User berhasil diperbarui');
     }
 
     public function destroy(string $id): JsonResponse
     {
+        abort_if(auth()->id() === $id, 422, 'Akun sendiri tidak dapat dinonaktifkan');
         $this->userRepo->delete($id);
 
         return $this->success(null, 'User berhasil dinonaktifkan');
@@ -68,10 +69,11 @@ class UserController extends Controller
 
     public function toggleActive(string $id): JsonResponse
     {
+        abort_if(auth()->id() === $id, 422, 'Akun sendiri tidak dapat dinonaktifkan');
         $user = $this->userRepo->findOrFail($id);
         $user->update(['is_active' => ! $user->is_active]);
 
-        return $this->success(new UserResource($user), 'Status user berhasil diubah');
+        return $this->success(new UserResource($user->load(['roles', 'wilayah', 'lingkungan'])), 'Status user berhasil diubah');
     }
 
     public function assignRoles(AssignRolesRequest $request, string $id): JsonResponse

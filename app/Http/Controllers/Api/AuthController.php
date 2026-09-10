@@ -47,7 +47,7 @@ class AuthController extends Controller
         $this->logUserIn($request, $user);
 
         return $this->success([
-            'user' => new UserResource($user->load('roles')),
+            'user' => new UserResource($user->load(['roles', 'wilayah', 'lingkungan'])),
         ], 'Login berhasil');
     }
 
@@ -64,7 +64,7 @@ class AuthController extends Controller
 
     public function user(Request $request): JsonResponse
     {
-        return $this->success(new UserResource($request->user()->load('roles.permissions')));
+        return $this->success(new UserResource($request->user()->load(['roles.permissions', 'wilayah', 'lingkungan'])));
     }
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
@@ -190,7 +190,7 @@ class AuthController extends Controller
         $this->logUserIn($request, $user);
 
         return $this->created([
-            'user' => new UserResource($user->load('roles')),
+            'user' => new UserResource($user->load(['roles', 'wilayah', 'lingkungan'])),
         ], 'Registrasi berhasil');
     }
 
