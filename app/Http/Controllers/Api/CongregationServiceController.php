@@ -7,6 +7,7 @@ use App\Http\Requests\Api\ApproveActionRequest;
 use App\Http\Requests\Api\RejectActionRequest;
 use App\Http\Requests\Api\StoreCongregationServiceRequest;
 use App\Http\Requests\Api\StoreManualCongregationServiceRequest;
+use App\Http\Requests\Api\AdminUpdateCongregationServiceRequest;
 use App\Http\Resources\CongregationServiceResource;
 use App\Http\Response\ApiResponse;
 use App\Models\CongregationService;
@@ -31,8 +32,7 @@ class CongregationServiceController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = CongregationService::with('user:id,name,email')
-            ->orderBy('created_at', 'desc');
+        $query = CongregationService::with('user:id,name,email');
 
         if (! auth()->user()?->can('bookings.approve')) {
             $query->where('user_id', auth()->id());
@@ -40,6 +40,14 @@ class CongregationServiceController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        // Antrean pending diproses FIFO agar adil. Daftar riwayat tetap terbaru
+        // di atas supaya mudah melihat perubahan terakhir.
+        if ($request->input('status') === 'pending') {
+            $query->orderBy('created_at', 'asc')->orderBy('service_date', 'asc');
+        } else {
+            $query->orderBy('created_at', 'desc');
         }
 
         if ($request->filled('service_type')) {
@@ -200,5 +208,18 @@ class CongregationServiceController extends Controller
             new CongregationServiceResource($service->load('user:id,name,email')),
             'Permohonan pelayanan ditolak'
         );
+    }
+
+    public function adminUpdate(AdminUpdateCongregationServiceRequest $request, string $id): JsonResponse
+    {
+        $service = CongregationService::findOrFail($id);
+        $service->update($request->validated());
+        return $this->success(new CongregationServiceResource($service->load('user:id,name,email')), 'Permohonan berhasil diperbarui');
+    }
+
+    public function destroy(string $id): JsonResponse
+    {
+        CongregationService::findOrFail($id)->delete();
+        return $this->success(null, 'Permohonan berhasil dihapus');
     }
 }

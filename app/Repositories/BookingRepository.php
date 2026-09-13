@@ -179,7 +179,10 @@ class BookingRepository
     public function getPendingBookings(User $user): LengthAwarePaginator
     {
         $query = Booking::with(['user:id,name,department', 'room:id,name,patron_name,slug'])
-            ->orderBy('created_at', 'asc');
+            // FIFO adalah prioritas utama agar pengajuan lama tidak tertinggal.
+            // Tanggal booking hanya menjadi pemecah seri jika waktu pengajuan sama.
+            ->orderBy('created_at', 'asc')
+            ->orderBy('booking_date', 'asc');
 
         if ($user->hasAnyRole(['p2', 'pastor', 'it_admin'])) {
             $query->whereIn('status', [
