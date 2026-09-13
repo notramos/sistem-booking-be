@@ -6,6 +6,9 @@ use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
+use App\Notifications\Concerns\HasAlbertusWebPush;
 
 /**
  * Kabar kemajuan untuk PEMOHON saat sekretariat menyetujui tahap pertama.
@@ -15,12 +18,18 @@ use Illuminate\Notifications\Notification;
 class BookingForwardedToAdmin extends Notification
 {
     use Queueable;
+    use HasAlbertusWebPush;
 
     public function __construct(private Booking $booking) {}
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database', 'mail', WebPushChannel::class];
+    }
+
+    public function toWebPush(object $notifiable, object $notification): WebPushMessage
+    {
+        return $this->pushMessage('Peminjaman Diteruskan', 'Peminjaman Anda sudah disetujui sekretariat dan menunggu persetujuan final.', '/booking/'.$this->booking->id, 'booking-forwarded-'.$this->booking->id);
     }
 
     public function toMail(object $notifiable): MailMessage

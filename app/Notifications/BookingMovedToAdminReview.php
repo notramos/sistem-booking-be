@@ -6,16 +6,25 @@ use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
+use App\Notifications\Concerns\HasAlbertusWebPush;
 
 class BookingMovedToAdminReview extends Notification
 {
     use Queueable;
+    use HasAlbertusWebPush;
 
     public function __construct(private Booking $booking) {}
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database', 'mail', WebPushChannel::class];
+    }
+
+    public function toWebPush(object $notifiable, object $notification): WebPushMessage
+    {
+        return $this->pushMessage('Peminjaman Menunggu Persetujuan', 'Ada peminjaman yang menunggu persetujuan admin.', '/approvals', 'booking-admin-'.$this->booking->id);
     }
 
     public function toMail(object $notifiable): MailMessage

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\MaintenanceController;
 use App\Http\Controllers\Api\LingkunganController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RoomCategoryController;
 use App\Http\Controllers\Api\RoomController;
@@ -93,6 +94,11 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
     Route::put('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
     Route::put('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+
+    // PWA Web Push
+    Route::post('push-subscriptions', [PushSubscriptionController::class, 'store'])->middleware('throttle:30,1');
+    Route::delete('push-subscriptions', [PushSubscriptionController::class, 'destroy'])->middleware('throttle:30,1');
+    Route::post('push-subscriptions/test', [PushSubscriptionController::class, 'test'])->middleware('throttle:5,1');
 
     // Reports (sekretariat & admin)
     Route::get('reports/bookings', [ReportController::class, 'bookings'])->middleware('can:reports.view');

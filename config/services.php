@@ -39,4 +39,14 @@ return [
         'token' => env('FONNTE_TOKEN'),
     ],
 
+    'webpush' => [
+        'subject' => env('VAPID_SUBJECT', 'https://app.santoalbertus.web.id'),
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+    ],
+
+    'frontend' => [
+        'url' => env('FRONTEND_URL', 'https://app.santoalbertus.web.id'),
+    ],
+
 ];

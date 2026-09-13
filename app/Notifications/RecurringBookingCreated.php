@@ -6,16 +6,25 @@ use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
+use App\Notifications\Concerns\HasAlbertusWebPush;
 
 class RecurringBookingCreated extends Notification
 {
     use Queueable;
+    use HasAlbertusWebPush;
 
     public function __construct(private Booking $booking, private int $skippedCount) {}
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database', 'mail', WebPushChannel::class];
+    }
+
+    public function toWebPush(object $notifiable, object $notification): WebPushMessage
+    {
+        return $this->pushMessage('Peminjaman Rutin Baru', 'Ada peminjaman rutin dari '.$this->booking->user->name.' yang perlu diproses.', '/approvals', 'booking-recurring-'.$this->booking->id);
     }
 
     public function toMail(object $notifiable): MailMessage

@@ -6,16 +6,26 @@ use App\Models\CongregationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
+use App\Notifications\Concerns\HasAlbertusWebPush;
 
 class CongregationServiceCreated extends Notification
 {
     use Queueable;
+    use HasAlbertusWebPush;
 
     public function __construct(private CongregationService $service) {}
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database', 'mail', WebPushChannel::class];
+    }
+
+    public function toWebPush(object $notifiable, object $notification): WebPushMessage
+    {
+        $typeLabel = config("congregation-services.types.{$this->service->service_type}.label", $this->service->service_type);
+        return $this->pushMessage('Permohonan Pelayanan Baru', 'Ada permohonan '.$typeLabel.' baru yang perlu diproses.', '/layanan-umat', 'service-new-'.$this->service->id);
     }
 
     public function toMail(object $notifiable): MailMessage
