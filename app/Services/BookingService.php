@@ -143,7 +143,7 @@ class BookingService
      * bentrok booking lain). Dipakai baik oleh create() (yang melempar exception saat
      * terhalang) maupun createRecurring() (yang melewati tanggal tersebut alih-alih gagal).
      */
-    private function isSlotBlocked(string $roomId, string $date, string $startTime, string $endTime, bool $lockForUpdate = false): ?string
+    private function isSlotBlocked(string $roomId, string $date, string $startTime, string $endTime, ?string $excludeBookingId = null, bool $lockForUpdate = false): ?string
     {
         $isUnderMaintenance = MaintenanceSchedule::forRoom($roomId, $date)
             ->where(function ($q) use ($startTime, $endTime) {
@@ -164,7 +164,7 @@ class BookingService
             date: $date,
             startTime: $startTime,
             endTime: $endTime,
-            excludeBookingId: null,
+            excludeBookingId: $excludeBookingId,
             lockForUpdate: $lockForUpdate,
         );
 
@@ -518,6 +518,31 @@ class BookingService
             $this->roomRepo->clearAvailabilityCache();
 
             return $booking;
+        });
+    }
+
+    /** Update from staff data management; historical dates are allowed. */
+    public function updateManual(string $id, array $data): Booking
+    {
+        return DB::transaction(function () use ($id, $data) {
+            $booking = $this->bookingRepo->findOrFail($id);
+            $slotChanged = isset($data['room_id']) || isset($data['booking_date'])
+                || isset($data['start_time']) || isset($data['end_time']);
+
+            if ($slotChanged) {
+                $roomId = $data['room_id'] ?? $booking->room_id;
+                $date = $data['booking_date'] ?? $booking->booking_date->format('Y-m-d');
+                $start = $data['start_time'] ?? $booking->start_time;
+                $end = $data['end_time'] ?? $booking->end_time;
+                $this->bookingRepo->lockRoom($roomId);
+                $reason = $this->isSlotBlocked($roomId, $date, $start, $end, excludeBookingId: $id, lockForUpdate: true);
+                if ($reason === 'maintenance') throw new RoomNotAvailableException('Ruangan sedang dalam jadwal perbaikan pada waktu tersebut');
+                if ($reason === 'conflict') throw new BookingConflictException('Waktu yang dipilih bertabrakan dengan booking lain');
+            }
+
+            $booking->update($data);
+            if ($slotChanged) $this->roomRepo->clearAvailabilityCache();
+            return $booking->fresh();
         });
     }
 

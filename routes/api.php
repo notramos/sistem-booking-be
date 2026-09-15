@@ -68,6 +68,7 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::get('bookings/calendar', [BookingController::class, 'calendar']);
     Route::post('bookings', [BookingController::class, 'store']);
     Route::post('bookings/manual', [BookingController::class, 'storeManual'])->middleware('can:bookings.approve');
+    Route::patch('bookings/{booking}/admin', [BookingController::class, 'adminUpdate'])->middleware('can:bookings.approve');
     Route::post('bookings/recurring/preview', [BookingController::class, 'previewRecurring']);
     Route::post('bookings/recurring', [BookingController::class, 'storeRecurring']);
     Route::get('bookings/{booking}', [BookingController::class, 'show']);
@@ -86,6 +87,8 @@ Route::middleware(['auth:sanctum', 'force.json'])->group(function () {
     Route::get('congregation-services/{id}', [CongregationServiceController::class, 'show']);
     Route::post('congregation-services', [CongregationServiceController::class, 'store']);
     Route::post('congregation-services/manual', [CongregationServiceController::class, 'storeManual'])->middleware('can:bookings.approve');
+    Route::patch('congregation-services/{id}/admin', [CongregationServiceController::class, 'adminUpdate'])->middleware('can:bookings.approve');
+    Route::delete('congregation-services/{id}', [CongregationServiceController::class, 'destroy'])->middleware('can:bookings.approve');
     Route::post('congregation-services/{id}/approve', [CongregationServiceController::class, 'approve'])->middleware('can:bookings.approve');
     Route::post('congregation-services/{id}/reject', [CongregationServiceController::class, 'reject'])->middleware('can:bookings.reject');
 

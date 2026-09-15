@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\PreviewRecurringBookingRequest;
 use App\Http\Requests\Api\StoreBookingRequest;
 use App\Http\Requests\Api\StoreManualBookingRequest;
+use App\Http\Requests\Api\AdminUpdateBookingRequest;
 use App\Http\Requests\Api\StoreRecurringBookingRequest;
 use App\Http\Requests\Api\UpdateBookingRequest;
 use App\Http\Resources\BookingResource;
@@ -193,6 +194,12 @@ class BookingController extends Controller
         $booking = $this->bookingService->updateTime($id, $validated);
 
         return $this->success(new BookingResource($booking), 'Booking berhasil diperbarui');
+    }
+
+    public function adminUpdate(AdminUpdateBookingRequest $request, string $id): JsonResponse
+    {
+        $booking = $this->bookingService->updateManual($id, $request->validated());
+        return $this->success(new BookingResource($booking->load(['room:id,name,patron_name,slug', 'user:id,name'])), 'Booking berhasil diperbarui');
     }
 
     public function updateRecurringDate(Request $request, string $id): JsonResponse
