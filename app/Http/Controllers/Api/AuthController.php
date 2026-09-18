@@ -69,11 +69,10 @@ class AuthController extends Controller
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        $status = Password::sendResetLink($request->only('email'));
-
-        return $status === Password::RESET_LINK_SENT
-            ? $this->success(null, 'Link reset password telah dikirim ke email Anda')
-            : $this->error('Gagal mengirim link reset password', 400);
+        return $this->error(
+            'Reset password melalui email sedang tidak tersedia. Silakan hubungi administrator.',
+            501
+        );
     }
 
     public function resetPassword(ResetPasswordRequest $request): JsonResponse

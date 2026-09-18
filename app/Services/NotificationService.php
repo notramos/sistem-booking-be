@@ -12,6 +12,7 @@ use App\Notifications\BookingForwardedToAdmin;
 use App\Notifications\BookingMovedToAdminReview;
 use App\Notifications\BookingRejected;
 use App\Notifications\CongregationServiceApproved;
+use App\Notifications\CongregationServiceCreated;
 use App\Notifications\CongregationServiceRejected;
 use App\Notifications\RecurringBookingCreated;
 use Illuminate\Support\Facades\Log;
@@ -63,6 +64,14 @@ class NotificationService
     public function congregationServiceApproved(CongregationService $service): void
     {
         $this->safely(fn () => $service->user?->notify(new CongregationServiceApproved($service)));
+    }
+
+    public function congregationServiceCreated(CongregationService $service): void
+    {
+        $this->safely(function () use ($service) {
+            $sekretariat = User::role('sekretariat')->get();
+            Notification::send($sekretariat, new CongregationServiceCreated($service));
+        });
     }
 
     public function congregationServiceRejected(CongregationService $service): void

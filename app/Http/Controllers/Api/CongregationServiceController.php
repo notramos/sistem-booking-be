@@ -11,15 +11,12 @@ use App\Http\Requests\Api\AdminUpdateCongregationServiceRequest;
 use App\Http\Resources\CongregationServiceResource;
 use App\Http\Response\ApiResponse;
 use App\Models\CongregationService;
-use App\Models\User;
-use App\Notifications\CongregationServiceCreated;
 use App\Services\AuditService;
 use App\Services\NotificationService;
 use App\Support\Pagination;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Notification;
 
 class CongregationServiceController extends Controller
 {
@@ -103,10 +100,7 @@ class CongregationServiceController extends Controller
 
         $this->auditService->log('congregation_service_created', $service);
 
-        $sekretariat = User::role('sekretariat')->get();
-        if ($sekretariat->isNotEmpty()) {
-            Notification::send($sekretariat, new CongregationServiceCreated($service));
-        }
+        $this->notificationService->congregationServiceCreated($service);
 
         return $this->created(
             new CongregationServiceResource($service->load('user:id,name,email')),

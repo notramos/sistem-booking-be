@@ -19,7 +19,7 @@ class BookingRejected extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database', WebPushChannel::class, 'mail'];
+        return ['database', WebPushChannel::class];
     }
 
     public function toWebPush(object $notifiable, object $notification): WebPushMessage

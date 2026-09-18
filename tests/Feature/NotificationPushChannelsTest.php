@@ -51,7 +51,7 @@ class NotificationPushChannelsTest extends TestCase
 
         foreach ($notifications as $notification) {
             $this->assertSame(
-                ['database', WebPushChannel::class, 'mail'],
+                ['database', WebPushChannel::class],
                 $notification->via(new User),
                 $notification::class
             );
