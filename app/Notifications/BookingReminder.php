@@ -6,16 +6,25 @@ use App\Models\Booking;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
+use App\Notifications\Concerns\HasAlbertusWebPush;
 
 class BookingReminder extends Notification
 {
     use Queueable;
+    use HasAlbertusWebPush;
 
     public function __construct(private Booking $booking) {}
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database', WebPushChannel::class, 'mail'];
+    }
+
+    public function toWebPush(object $notifiable, object $notification): WebPushMessage
+    {
+        return $this->pushMessage('Pengingat Peminjaman', 'Peminjaman '.$this->booking->title.' dijadwalkan besok.', '/booking/'.$this->booking->id, 'booking-reminder-'.$this->booking->id);
     }
 
     public function toMail(object $notifiable): MailMessage
