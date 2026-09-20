@@ -30,7 +30,10 @@ class RoomRepository
         $key = "room:unavailable:v{$version}:{$date}:{$startTime}:{$endTime}";
 
         return Cache::store('database')->remember($key, 300, function () use ($date, $startTime, $endTime) {
-            $bookedIds = Booking::where('booking_date', $date)
+            $bookedIds = Booking::where(function ($q) use ($date) {
+                    $q->where('booking_date', $date)
+                        ->orWhereJsonContains('recurring_dates', $date);
+                })
                 ->whereIn('status', [BookingStatus::PENDING->value, BookingStatus::APPROVED->value])
                 ->where(function ($q) use ($startTime, $endTime) {
                     $q->where('start_time', '<', $endTime)
@@ -156,7 +159,10 @@ class RoomRepository
     public function getDayBookedSlots(string $roomId, string $date): Collection
     {
         return Booking::where('room_id', $roomId)
-            ->where('booking_date', $date)
+            ->where(function ($q) use ($date) {
+                $q->where('booking_date', $date)
+                    ->orWhereJsonContains('recurring_dates', $date);
+            })
             ->whereIn('status', [BookingStatus::PENDING->value, BookingStatus::APPROVED->value])
             ->orderBy('start_time')
             ->get(['id', 'user_id', 'title', 'start_time', 'end_time', 'status']);
@@ -177,7 +183,10 @@ class RoomRepository
         }
 
         return Booking::whereIn('room_id', $roomIds)
-            ->where('booking_date', $date)
+            ->where(function ($q) use ($date) {
+                $q->where('booking_date', $date)
+                    ->orWhereJsonContains('recurring_dates', $date);
+            })
             ->whereIn('status', [BookingStatus::PENDING->value, BookingStatus::APPROVED->value])
             ->orderBy('start_time')
             ->get(['id', 'user_id', 'room_id', 'title', 'start_time', 'end_time', 'status'])
