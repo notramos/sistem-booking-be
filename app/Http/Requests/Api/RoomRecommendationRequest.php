@@ -16,6 +16,7 @@ class RoomRecommendationRequest extends FormRequest
         return [
             'date' => 'required|date',
             'attendees' => 'required|integer|min:1',
+            'purpose_type' => 'nullable|string|in:latihan_koor',
         ];
     }
 

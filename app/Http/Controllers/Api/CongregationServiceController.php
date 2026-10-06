@@ -168,9 +168,23 @@ class CongregationServiceController extends Controller
             return $this->error('Permohonan sudah diproses', 422);
         }
 
+        $scheduledTypes = ['misa_lingkungan', 'konsultasi_romo', 'sakramen_minyak_suci'];
+        $needsSchedule = in_array($service->service_type, $scheduledTypes, true);
+        if ($needsSchedule && (! $request->filled('service_date') || ! $request->filled('service_time') || ! $request->filled('service_place'))) {
+            return $this->error('Tanggal, jam, dan tempat pelayanan final wajib diisi sebelum persetujuan.', 422);
+        }
+
+        $dynamicFields = $service->dynamic_fields ?? [];
+        if ($needsSchedule) {
+            $dynamicFields['confirmed_time'] = $request->input('service_time');
+            $dynamicFields['confirmed_place'] = $request->input('service_place');
+        }
+
         $service->update([
             'status' => 'approved',
             'notes' => $request->notes ?? $service->notes,
+            'service_date' => $needsSchedule ? $request->input('service_date') : $service->service_date,
+            'dynamic_fields' => $dynamicFields,
         ]);
 
         $this->auditService->log('congregation_service_approved', $service);

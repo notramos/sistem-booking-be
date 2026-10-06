@@ -15,6 +15,9 @@ class ApproveActionRequest extends FormRequest
     {
         return [
             'notes' => 'nullable|string|max:500',
+            'service_date' => 'nullable|date|after_or_equal:today',
+            'service_time' => 'nullable|date_format:H:i',
+            'service_place' => 'nullable|string|max:255',
         ];
     }
 

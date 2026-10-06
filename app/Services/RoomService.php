@@ -86,9 +86,12 @@ class RoomService
      *
      * @return array<int, array<string, mixed>>
      */
-    public function recommendRooms(string $date, int $attendees): array
+    public function recommendRooms(string $date, int $attendees, ?string $purposeType = null): array
     {
         $rooms = $this->roomRepo->getRoomsByCapacity($attendees);
+        if ($purposeType === 'latihan_koor') {
+            $rooms = $rooms->filter(fn (Room $room) => \App\Support\ChoirRoom::allows($room))->values();
+        }
         $bookedByRoom = $this->roomRepo->getDayBookedSlotsForRooms($rooms->pluck('id')->all(), $date);
         $hours = config('booking.operating_hours');
 
@@ -113,7 +116,7 @@ class RoomService
             ->values();
 
         $closestCapacity = $sorted->first()['capacity'] ?? null;
-        $final = $closestCapacity === null
+        $final = $purposeType === 'latihan_koor' || $closestCapacity === null
             ? $sorted
             : $sorted->filter(fn (array $item) => $item['capacity'] === $closestCapacity);
 

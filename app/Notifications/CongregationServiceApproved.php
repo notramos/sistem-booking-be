@@ -24,7 +24,17 @@ class CongregationServiceApproved extends Notification
 
     public function toWebPush(object $notifiable, object $notification): WebPushMessage
     {
-        return $this->pushMessage('Permohonan Disetujui', 'Permohonan '.$this->typeLabel().' telah disetujui.', '/layanan-umat/'.$this->service->id, 'service-'.$this->service->id);
+        $schedule = $this->scheduleSummary();
+        return $this->pushMessage('Permohonan Disetujui', 'Permohonan '.$this->typeLabel().' telah disetujui.'.($schedule ? ' '.$schedule : ''), '/layanan-umat/'.$this->service->id, 'service-'.$this->service->id);
+    }
+
+    private function scheduleSummary(): string
+    {
+        if (! $this->service->service_date) return '';
+        $details = $this->service->dynamic_fields ?? [];
+        return 'Jadwal: '.$this->service->service_date->format('d/m/Y')
+            .(isset($details['confirmed_time']) ? ' '.$details['confirmed_time'] : '')
+            .(isset($details['confirmed_place']) ? ' di '.$details['confirmed_place'] : '').'.';
     }
 
     private function typeLabel(): string
@@ -44,6 +54,13 @@ class CongregationServiceApproved extends Notification
         if ($this->service->service_date) {
             $mail->line('Tanggal pelayanan: ' . $this->service->service_date->format('d/m/Y'));
         }
+        $details = $this->service->dynamic_fields ?? [];
+        if (isset($details['confirmed_time'])) {
+            $mail->line('Jam pelayanan: ' . $details['confirmed_time']);
+        }
+        if (isset($details['confirmed_place'])) {
+            $mail->line('Tempat pelayanan: ' . $details['confirmed_place']);
+        }
         if ($this->service->notes) {
             $mail->line('Catatan sekretariat: ' . $this->service->notes);
         }
@@ -61,6 +78,8 @@ class CongregationServiceApproved extends Notification
             'service_type_label' => $this->typeLabel(),
             'applicant_name' => $this->service->applicant_name,
             'service_date' => $this->service->service_date?->format('Y-m-d'),
+            'service_time' => ($this->service->dynamic_fields ?? [])['confirmed_time'] ?? null,
+            'service_place' => ($this->service->dynamic_fields ?? [])['confirmed_place'] ?? null,
             'notes' => $this->service->notes,
             'type' => 'congregation_service_approved',
         ];

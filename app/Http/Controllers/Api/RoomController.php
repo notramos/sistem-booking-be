@@ -78,7 +78,7 @@ class RoomController extends Controller
         $validated = $request->validated();
 
         return $this->success(
-            $this->roomService->recommendRooms($validated['date'], (int) $validated['attendees'])
+            $this->roomService->recommendRooms($validated['date'], (int) $validated['attendees'], $validated['purpose_type'] ?? null)
         );
     }
 

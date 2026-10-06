@@ -123,14 +123,14 @@ return [
             ],
         ],
         'sakramen_minyak_suci' => [
-            'label' => 'Sakramen Minyak Suci',
-            'description' => 'Pendaftaran penerimaan sakramen minyak suci',
+            'label' => 'Perminyakan (Sakramen Minyak Suci)',
+            'description' => 'Permohonan pelayanan umat yang sakit; jadwal final ditentukan sekretariat',
             'required_fields' => [
-                'applicant_name', 'address', 'contact', 'birth_place', 'birth_date',
+                'applicant_name', 'address', 'contact',
             ],
             'dynamic_fields' => [
-                'baptismal_name', 'baptism_date', 'baptism_place', 'baptism_church',
-                'reception_date', 'reception_time', 'reception_place', 'priest_name',
+                'baptismal_name', 'hubungan_keluarga', 'urgensi',
+                'reception_date', 'reception_time', 'reception_place',
             ],
         ],
         'peminjaman_ruangan' => [
@@ -159,6 +159,13 @@ return [
             ],
         ],
 
+        'misa_lingkungan' => [
+            'label' => 'Misa Lingkungan',
+            'description' => 'Permohonan misa lingkungan; jadwal final ditentukan sekretariat',
+            'required_fields' => ['applicant_name', 'contact', 'region', 'neighborhood'],
+            'dynamic_fields' => ['nama_kaling', 'tanggal_diminta', 'waktu_preferensi', 'tempat_misa', 'alamat_misa', 'perkiraan_umat'],
+        ],
+
         'permohonan_misa' => [
             'label' => 'Permohonan Misa',
             'description' => 'Permohonan agar misa diadakan di luar jadwal tetap (misa lingkungan, rumah, arwah, syukur)',
@@ -172,7 +179,7 @@ return [
         'konsultasi_romo' => [
             'label' => 'Konsultasi Romo',
             'description' => 'Permohonan jadwal konsultasi/pendampingan dengan romo',
-            'required_fields' => ['applicant_name', 'contact', 'neighborhood'],
+            'required_fields' => ['applicant_name', 'contact', 'region', 'neighborhood'],
             'dynamic_fields' => [
                 'topik_konsultasi', 'tanggal_diminta', 'waktu_preferensi', 'sifat',
             ],

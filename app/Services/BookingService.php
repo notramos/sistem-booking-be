@@ -14,6 +14,7 @@ use App\Models\Booking;
 use App\Models\MaintenanceSchedule;
 use App\Repositories\BookingRepository;
 use App\Repositories\RoomRepository;
+use App\Support\ChoirRoom;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,10 @@ class BookingService
             $this->bookingRepo->lockRoom($dto->roomId);
 
             $room = $this->roomRepo->findOrFail($dto->roomId);
+
+            if ($dto->purposeType === 'latihan_koor' && ! ChoirRoom::allows($room)) {
+                throw new RoomNotAvailableException('Latihan Koor hanya dapat menggunakan Aristoteles atau Cecilia (501).');
+            }
 
             if (! $room->isAvailable()) {
                 throw new RoomNotAvailableException('Ruangan sedang tidak tersedia untuk dipesan');
@@ -215,6 +220,10 @@ class BookingService
 
             $room = $this->roomRepo->findOrFail($dto->roomId);
 
+            if ($dto->purposeType === 'latihan_koor' && ! ChoirRoom::allows($room)) {
+                throw new RoomNotAvailableException('Latihan Koor hanya dapat menggunakan Aristoteles atau Cecilia (501).');
+            }
+
             if (! $room->isAvailable()) {
                 throw new RoomNotAvailableException('Ruangan sedang tidak tersedia untuk dipesan');
             }
@@ -346,6 +355,10 @@ class BookingService
             $booking = $this->bookingRepo->findOrFail($id);
 
             $roomId = $data['room_id'] ?? $booking->room_id;
+            $purposeType = $data['purpose_type'] ?? $booking->purpose_type;
+            if ($purposeType === 'latihan_koor' && ! ChoirRoom::allows($this->roomRepo->findOrFail($roomId))) {
+                throw new RoomNotAvailableException('Latihan Koor hanya dapat menggunakan Aristoteles atau Cecilia (501).');
+            }
             $bookingDate = $data['booking_date'] ?? $booking->booking_date->format('Y-m-d');
             $startTime = $data['start_time'] ?? $booking->start_time;
             $endTime = $data['end_time'] ?? $booking->end_time;

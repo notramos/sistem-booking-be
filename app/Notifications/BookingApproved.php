@@ -24,7 +24,8 @@ class BookingApproved extends Notification
 
     public function toWebPush(object $notifiable, object $notification): WebPushMessage
     {
-        return $this->pushMessage('Peminjaman Disetujui', 'Peminjaman '.$this->booking->title.' telah disetujui.', '/booking/'.$this->booking->id, 'booking-'.$this->booking->id);
+        $keyNotice = $this->booking->end_time > '17:30:00' ? ' Kunci diambil di pos sekuriti.' : '';
+        return $this->pushMessage('Peminjaman Disetujui', 'Peminjaman '.$this->booking->title.' telah disetujui.'.$keyNotice, '/booking/'.$this->booking->id, 'booking-'.$this->booking->id);
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -50,6 +51,7 @@ class BookingApproved extends Notification
             'booking_date' => $this->booking->booking_date->format('Y-m-d'),
             'start_time' => $this->booking->start_time,
             'end_time' => $this->booking->end_time,
+            'key_pickup' => $this->booking->end_time > '17:30:00' ? 'Kunci diambil di pos sekuriti' : null,
             'booker_name' => $this->booking->user->name,
             'type' => 'booking_approved',
         ];

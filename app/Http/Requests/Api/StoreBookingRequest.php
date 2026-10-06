@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api;
 
 use App\Models\Room;
+use App\Support\ChoirRoom;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -24,7 +25,7 @@ class StoreBookingRequest extends FormRequest
             'booking_date' => "required|date|after_or_equal:{$minDate}",
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
-            'purpose_type' => 'nullable|in:ibadah,acara_keluarga,latihan_musik,pembinaan,rapat,seminar,publik',
+            'purpose_type' => 'nullable|in:ibadah,acara_keluarga,latihan_musik,latihan_koor,pembinaan,rapat,seminar,publik,acara_lainnya',
             'expected_attendees' => 'nullable|integer|min:1',
             'notes' => 'nullable|string',
         ];
@@ -56,6 +57,12 @@ class StoreBookingRequest extends FormRequest
 
             $attendees = $this->input('expected_attendees');
             $roomId = $this->input('room_id');
+            if ($roomId && $this->input('purpose_type') === 'latihan_koor') {
+                $choirRoom = Room::find($roomId);
+                if ($choirRoom && ! ChoirRoom::allows($choirRoom)) {
+                    $validator->errors()->add('room_id', 'Latihan Koor hanya dapat menggunakan Aristoteles atau Cecilia (501).');
+                }
+            }
             if ($attendees && $roomId) {
                 $room = Room::find($roomId);
                 if ($room && (int) $attendees > (int) $room->capacity) {
