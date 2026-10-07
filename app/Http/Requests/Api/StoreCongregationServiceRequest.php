@@ -46,14 +46,18 @@ class StoreCongregationServiceRequest extends FormRequest
             'dynamic_fields' => 'nullable|array',
         ];
 
-        if ($this->input('service_type') === 'misa_lingkungan') {
+        if ($this->input('service_type') === 'permohonan_misa') {
             $rules['region'] = 'required|string|max:255';
             $rules['neighborhood'] = 'required|string|max:255';
-            $rules['dynamic_fields.nama_kaling'] = 'required|string|max:255';
-            $rules['dynamic_fields.tanggal_diminta'] = 'required|date|after_or_equal:today';
-            $rules['dynamic_fields.waktu_preferensi'] = 'required|date_format:H:i';
+            $rules['address'] = 'required|string|max:500';
+            $rules['description'] = 'required|string|max:2000';
+            $rules['dynamic_fields.jenis_misa'] = ['required', Rule::in(['lingkungan', 'arwah', 'syukur', 'rumah', 'lainnya'])];
+            $rules['dynamic_fields.nama_kaling'] = [Rule::requiredIf($this->input('dynamic_fields.jenis_misa') === 'lingkungan'), 'nullable', 'string', 'max:255'];
+            $rules['dynamic_fields.tanggal_misa_diminta'] = 'required|date|after_or_equal:today';
+            $rules['dynamic_fields.jam_misa_diminta'] = 'required|date_format:H:i';
             $rules['dynamic_fields.tempat_misa'] = 'required|string|max:255';
-            $rules['dynamic_fields.alamat_misa'] = 'required|string|max:500';
+            $rules['dynamic_fields.alamat_misa'] = 'nullable|string|max:500';
+            $rules['dynamic_fields.perkiraan_umat'] = 'nullable|integer|min:1';
         }
 
         if ($this->input('service_type') === 'konsultasi_romo') {

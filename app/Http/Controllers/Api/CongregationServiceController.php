@@ -168,7 +168,7 @@ class CongregationServiceController extends Controller
             return $this->error('Permohonan sudah diproses', 422);
         }
 
-        $scheduledTypes = ['misa_lingkungan', 'konsultasi_romo', 'sakramen_minyak_suci'];
+        $scheduledTypes = ['permohonan_misa', 'konsultasi_romo', 'sakramen_minyak_suci'];
         $needsSchedule = in_array($service->service_type, $scheduledTypes, true);
         if ($needsSchedule && (! $request->filled('service_date') || ! $request->filled('service_time') || ! $request->filled('service_place'))) {
             return $this->error('Tanggal, jam, dan tempat pelayanan final wajib diisi sebelum persetujuan.', 422);

@@ -159,19 +159,12 @@ return [
             ],
         ],
 
-        'misa_lingkungan' => [
-            'label' => 'Misa Lingkungan',
-            'description' => 'Permohonan misa lingkungan; jadwal final ditentukan sekretariat',
-            'required_fields' => ['applicant_name', 'contact', 'region', 'neighborhood'],
-            'dynamic_fields' => ['nama_kaling', 'tanggal_diminta', 'waktu_preferensi', 'tempat_misa', 'alamat_misa', 'perkiraan_umat'],
-        ],
-
         'permohonan_misa' => [
             'label' => 'Permohonan Misa',
-            'description' => 'Permohonan agar misa diadakan di luar jadwal tetap (misa lingkungan, rumah, arwah, syukur)',
-            'required_fields' => ['applicant_name', 'contact', 'neighborhood'],
+            'description' => 'Permohonan misa lingkungan, rumah, arwah, atau syukur; jadwal final ditentukan sekretariat',
+            'required_fields' => ['applicant_name', 'contact', 'region', 'neighborhood', 'address'],
             'dynamic_fields' => [
-                'jenis_misa', 'tanggal_misa_diminta', 'jam_misa_diminta',
+                'jenis_misa', 'nama_kaling', 'tanggal_misa_diminta', 'jam_misa_diminta',
                 'tempat_misa', 'alamat_misa', 'perkiraan_umat', 'kebutuhan_petugas',
             ],
         ],
