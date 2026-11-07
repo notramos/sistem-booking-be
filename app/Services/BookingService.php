@@ -14,7 +14,7 @@ use App\Models\Booking;
 use App\Models\MaintenanceSchedule;
 use App\Repositories\BookingRepository;
 use App\Repositories\RoomRepository;
-use App\Support\ChoirRoom;
+use App\Support\PracticeRoom;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -35,8 +35,8 @@ class BookingService
 
             $room = $this->roomRepo->findOrFail($dto->roomId);
 
-            if ($dto->purposeType === 'latihan_koor' && ! ChoirRoom::allows($room)) {
-                throw new RoomNotAvailableException('Latihan Koor hanya dapat menggunakan Aristoteles atau Cecilia (501).');
+            if (! PracticeRoom::allows($room, $dto->purposeType)) {
+                throw new RoomNotAvailableException(PracticeRoom::error($dto->purposeType));
             }
 
             if (! $room->isAvailable()) {
@@ -220,8 +220,8 @@ class BookingService
 
             $room = $this->roomRepo->findOrFail($dto->roomId);
 
-            if ($dto->purposeType === 'latihan_koor' && ! ChoirRoom::allows($room)) {
-                throw new RoomNotAvailableException('Latihan Koor hanya dapat menggunakan Aristoteles atau Cecilia (501).');
+            if (! PracticeRoom::allows($room, $dto->purposeType)) {
+                throw new RoomNotAvailableException(PracticeRoom::error($dto->purposeType));
             }
 
             if (! $room->isAvailable()) {
@@ -356,8 +356,8 @@ class BookingService
 
             $roomId = $data['room_id'] ?? $booking->room_id;
             $purposeType = $data['purpose_type'] ?? $booking->purpose_type;
-            if ($purposeType === 'latihan_koor' && ! ChoirRoom::allows($this->roomRepo->findOrFail($roomId))) {
-                throw new RoomNotAvailableException('Latihan Koor hanya dapat menggunakan Aristoteles atau Cecilia (501).');
+            if (! PracticeRoom::allows($this->roomRepo->findOrFail($roomId), $purposeType)) {
+                throw new RoomNotAvailableException(PracticeRoom::error($purposeType));
             }
             $bookingDate = $data['booking_date'] ?? $booking->booking_date->format('Y-m-d');
             $startTime = $data['start_time'] ?? $booking->start_time;

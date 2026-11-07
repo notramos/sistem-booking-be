@@ -130,6 +130,7 @@ return [
             ],
             'dynamic_fields' => [
                 'baptismal_name', 'hubungan_keluarga', 'urgensi',
+                'pemberi_sakramen', 'penerima_sakramen',
                 'reception_date', 'reception_time', 'reception_place',
             ],
         ],
@@ -161,11 +162,11 @@ return [
 
         'permohonan_misa' => [
             'label' => 'Permohonan Misa',
-            'description' => 'Permohonan misa lingkungan, rumah, arwah, atau syukur; jadwal final ditentukan sekretariat',
+            'description' => 'Permohonan misa lingkungan, arwah, requiem, atau syukur; jadwal final ditentukan sekretariat',
             'required_fields' => ['applicant_name', 'contact', 'region', 'neighborhood', 'address'],
             'dynamic_fields' => [
                 'jenis_misa', 'nama_kaling', 'tanggal_misa_diminta', 'jam_misa_diminta',
-                'tempat_misa', 'alamat_misa', 'perkiraan_umat', 'kebutuhan_petugas',
+                'tempat_misa', 'alamat_misa', 'kebutuhan_petugas',
             ],
         ],
 
@@ -174,7 +175,7 @@ return [
             'description' => 'Permohonan jadwal konsultasi/pendampingan dengan romo',
             'required_fields' => ['applicant_name', 'contact', 'region', 'neighborhood'],
             'dynamic_fields' => [
-                'topik_konsultasi', 'tanggal_diminta', 'waktu_preferensi', 'sifat',
+                'topik_konsultasi', 'tanggal_diminta', 'waktu_preferensi',
             ],
         ],
     ],

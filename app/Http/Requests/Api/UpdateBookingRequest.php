@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use App\Models\Room;
 use App\Models\Booking;
-use App\Support\ChoirRoom;
+use App\Support\PracticeRoom;
 
 class UpdateBookingRequest extends FormRequest
 {
@@ -25,7 +25,7 @@ class UpdateBookingRequest extends FormRequest
             'start_time' => 'sometimes|date_format:H:i',
             'end_time' => 'sometimes|date_format:H:i|after:start_time',
             'notes' => 'nullable|string',
-            'purpose_type' => 'sometimes|nullable|in:ibadah,acara_keluarga,latihan_musik,latihan_koor,pembinaan,rapat,seminar,publik,acara_lainnya',
+            'purpose_type' => 'sometimes|nullable|in:ibadah,acara_keluarga,latihan_musik,latihan_koor,latihan_lektor_pemazmur,pembinaan,rapat,seminar,publik,acara_lainnya',
         ];
     }
 
@@ -34,11 +34,9 @@ class UpdateBookingRequest extends FormRequest
         $validator->after(function (Validator $validator) {
             $existing = Booking::find($this->route('booking'));
             $purpose = $this->input('purpose_type', $existing?->purpose_type);
-            if ($purpose === 'latihan_koor') {
-                $room = Room::find($this->input('room_id', $existing?->room_id));
-                if ($room && ! ChoirRoom::allows($room)) {
-                    $validator->errors()->add('room_id', 'Latihan Koor hanya dapat menggunakan Aristoteles atau Cecilia (501).');
-                }
+            $room = Room::find($this->input('room_id', $existing?->room_id));
+            if ($room && ! PracticeRoom::allows($room, $purpose)) {
+                $validator->errors()->add('room_id', PracticeRoom::error($purpose));
             }
             $hours = config('booking.operating_hours');
             $start = $this->input('start_time');

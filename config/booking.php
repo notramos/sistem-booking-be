@@ -17,10 +17,13 @@ return [
         'ibadah' => 'Ibadah & Persekutuan',
         'acara_keluarga' => 'Acara Keluarga',
         'latihan_musik' => 'Latihan Musik',
+        'latihan_koor' => 'Latihan Koor',
+        'latihan_lektor_pemazmur' => 'Latihan Lektor & Pemazmur',
         'pembinaan' => 'Pembinaan',
         'rapat' => 'Rapat Pelayanan',
         'seminar' => 'Seminar & Training',
         'publik' => 'Acara Publik',
+        'acara_lainnya' => 'Acara Lainnya',
     ],
     'rooms' => [
         'max_images_per_room' => 10,

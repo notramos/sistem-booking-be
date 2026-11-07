@@ -51,20 +51,18 @@ class StoreCongregationServiceRequest extends FormRequest
             $rules['neighborhood'] = 'required|string|max:255';
             $rules['address'] = 'required|string|max:500';
             $rules['description'] = 'required|string|max:2000';
-            $rules['dynamic_fields.jenis_misa'] = ['required', Rule::in(['lingkungan', 'arwah', 'syukur', 'rumah', 'lainnya'])];
+            $rules['dynamic_fields.jenis_misa'] = ['required', Rule::in(['lingkungan', 'arwah', 'requiem', 'syukur'])];
             $rules['dynamic_fields.nama_kaling'] = [Rule::requiredIf($this->input('dynamic_fields.jenis_misa') === 'lingkungan'), 'nullable', 'string', 'max:255'];
             $rules['dynamic_fields.tanggal_misa_diminta'] = 'required|date|after_or_equal:today';
             $rules['dynamic_fields.jam_misa_diminta'] = 'required|date_format:H:i';
             $rules['dynamic_fields.tempat_misa'] = 'required|string|max:255';
             $rules['dynamic_fields.alamat_misa'] = 'nullable|string|max:500';
-            $rules['dynamic_fields.perkiraan_umat'] = 'nullable|integer|min:1';
         }
 
         if ($this->input('service_type') === 'konsultasi_romo') {
             $rules['region'] = 'required|string|max:255';
             $rules['neighborhood'] = 'required|string|max:255';
-            $rules['description'] = 'required|string|max:2000';
-            $rules['dynamic_fields.topik_konsultasi'] = ['required', Rule::in(['pernikahan', 'rumah_tangga', 'pribadi', 'lainnya'])];
+            $rules['dynamic_fields.topik_konsultasi'] = ['required', Rule::in(['pra_pernikahan', 'rumah_tangga', 'pribadi', 'lainnya'])];
             $rules['dynamic_fields.tanggal_diminta'] = 'required|date|after_or_equal:today';
             $rules['dynamic_fields.waktu_preferensi'] = ['required', Rule::in(['pagi', 'siang', 'sore'])];
         }
@@ -73,6 +71,8 @@ class StoreCongregationServiceRequest extends FormRequest
             $rules['address'] = 'required|string|max:500';
             $rules['description'] = 'required|string|max:2000';
             $rules['dynamic_fields.hubungan_keluarga'] = 'required|string|max:255';
+            $rules['dynamic_fields.pemberi_sakramen'] = 'required|string|max:255';
+            $rules['dynamic_fields.penerima_sakramen'] = 'required|string|max:255';
             $rules['dynamic_fields.urgensi'] = ['required', Rule::in(['biasa', 'mendesak'])];
             $rules['dynamic_fields.reception_date'] = 'required|date|after_or_equal:today';
             $rules['dynamic_fields.reception_place'] = 'required|string|max:255';
