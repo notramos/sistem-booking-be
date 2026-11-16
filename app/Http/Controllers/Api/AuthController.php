@@ -30,11 +30,14 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::where('email', $request->email)->first();
+        $identifier = trim($request->email);
+        $user = str_contains($identifier, '@')
+            ? User::where('email', $identifier)->first()
+            : User::whereRaw('LOWER(username) = ?', [mb_strtolower($identifier)])->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Email atau password salah'],
+                'email' => ['Email/UserName atau password salah'],
             ]);
         }
 

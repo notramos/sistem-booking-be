@@ -28,7 +28,7 @@ class IntensiMisaExport extends DefaultValueBinder implements FromQuery, WithCol
 
     public function headings(): array
     {
-        return ['Waktu Pengajuan / Pencatatan (WIB)', 'Waktu Diterima Sekretariat (WIB)', 'Tanggal Misa', 'Jadwal Misa', 'Pemohon', 'Wilayah', 'Lingkungan', 'Ucapan Syukur', 'Doa Arwah', 'Permohonan Lainnya', 'Stipendium (Rp)', 'Status'];
+        return ['Waktu Pengajuan / Pencatatan (WIB)', 'Waktu Diterima Sekretariat (WIB)', 'Tanggal Misa', 'Jadwal Misa', 'Pemohon', 'Wilayah', 'Lingkungan', 'Ucapan Syukur', 'Doa Arwah', 'Permohonan Lainnya', 'Sumbangan Intensi (Rp)', 'Status'];
     }
 
     public function map($service): array

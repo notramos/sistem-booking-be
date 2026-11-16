@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\Room;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Collection;
 
 class ReportService
 {
@@ -18,6 +19,37 @@ class ReportService
         if ($status) $query->where('status', $status);
 
         return $query->orderBy('booking_date', 'desc')->paginate(15);
+    }
+
+    /**
+     * Return one export row for every occurrence of a recurring booking.
+     *
+     * Recurring bookings are intentionally stored as one booking record with
+     * all occurrence dates in recurring_dates. A normal booking has no such
+     * list, so it is represented by booking_date.
+     */
+    public function bookingReportForExport(?string $startDate = null, ?string $endDate = null, ?string $status = null): Collection
+    {
+        $query = Booking::with(['user:id,name', 'room:id,name,patron_name'])
+            ->when($status, fn ($q) => $q->where('status', $status))
+            // A recurring series can start before the selected period while
+            // still having occurrences inside it.
+            ->when($endDate, fn ($q) => $q->where('booking_date', '<=', $endDate))
+            ->orderBy('booking_date', 'desc');
+
+        return $query->get()
+            ->flatMap(function (Booking $booking) use ($startDate, $endDate) {
+                $dates = $booking->recurring_dates ?: [$booking->booking_date?->toDateString()];
+
+                return collect($dates)
+                    ->filter(fn ($date) => is_string($date) && (!$startDate || $date >= $startDate) && (!$endDate || $date <= $endDate))
+                    ->map(fn (string $date) => [
+                        'booking' => $booking,
+                        'booking_date' => $date,
+                    ]);
+            })
+            ->sortByDesc('booking_date')
+            ->values();
     }
 
     public function roomUtilization(?string $startDate = null, ?string $endDate = null)

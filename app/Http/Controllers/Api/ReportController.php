@@ -85,7 +85,7 @@ class ReportController extends Controller
         $endDate = $request->get('end_date');
 
         $data = match ($type) {
-            'bookings' => $this->reportService->bookingReport($startDate, $endDate),
+            'bookings' => $this->reportService->bookingReportForExport($startDate, $endDate),
             'utilization' => $this->reportService->roomUtilization($startDate, $endDate),
             default => throw new \InvalidArgumentException('Invalid report type'),
         };
@@ -100,15 +100,15 @@ class ReportController extends Controller
                 public function array(): array
                 {
                     if ($this->type === 'bookings') {
-                        return $this->data->map(fn ($b) => [
-                            'Peminjam' => $b->title,
-                            'Kegiatan' => $b->description ?? '-',
-                            'Ruangan' => $b->room->display_label ?? '-',
-                            'Pemesan' => $b->user->name ?? '-',
-                            'Tanggal' => $b->booking_date,
-                            'Mulai' => $b->start_time,
-                            'Selesai' => $b->end_time,
-                            'Status' => $b->status,
+                        return $this->data->map(fn ($row) => [
+                            'Peminjam' => $row['booking']->title,
+                            'Kegiatan' => $row['booking']->description ?? '-',
+                            'Ruangan' => $row['booking']->room->display_label ?? '-',
+                            'Pemesan' => $row['booking']->user->name ?? '-',
+                            'Tanggal' => $row['booking_date'],
+                            'Mulai' => $row['booking']->start_time,
+                            'Selesai' => $row['booking']->end_time,
+                            'Status' => $row['booking']->status,
                         ])->toArray();
                     }
 

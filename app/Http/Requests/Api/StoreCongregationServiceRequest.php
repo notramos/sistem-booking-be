@@ -9,7 +9,9 @@ class StoreCongregationServiceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $type = $this->input('service_type');
+
+        return is_string($type) && $this->user()?->can('services.request.'.$type) === true;
     }
 
     public function rules(): array

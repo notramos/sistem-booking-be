@@ -26,6 +26,9 @@ class RolePermissionSeeder extends Seeder
             'settings.view', 'settings.update',
             // Audit permissions
             'audit.view',
+            // Pelayanan umat yang bisa diajukan sesuai peran
+            'services.request.intensi_misa', 'services.request.konsultasi_romo',
+            'services.request.permohonan_misa', 'services.request.sakramen_minyak_suci',
         ];
 
         foreach ($permissions as $permission) {
@@ -55,12 +58,22 @@ class RolePermissionSeeder extends Seeder
         $sekretariat->givePermissionTo([
             'rooms.view', 'bookings.create', 'bookings.cancel', 'bookings.view-all',
             'bookings.approve', 'bookings.reject', 'reports.view', 'reports.export',
+            'services.request.intensi_misa', 'services.request.konsultasi_romo',
+            'services.request.permohonan_misa', 'services.request.sakramen_minyak_suci',
         ]);
 
         // Umat — basic booking
         $umat = Role::firstOrCreate(['name' => 'umat', 'guard_name' => 'web']);
         $umat->givePermissionTo([
             'rooms.view', 'bookings.create', 'bookings.cancel',
+            'services.request.intensi_misa', 'services.request.konsultasi_romo',
+        ]);
+
+        $ketua = Role::firstOrCreate(['name' => 'ketua_lingkungan', 'guard_name' => 'web']);
+        $ketua->givePermissionTo([
+            'rooms.view', 'bookings.create', 'bookings.cancel',
+            'services.request.intensi_misa', 'services.request.konsultasi_romo',
+            'services.request.permohonan_misa', 'services.request.sakramen_minyak_suci',
         ]);
     }
 }
